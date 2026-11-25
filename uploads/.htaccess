@@ -1,0 +1,23 @@
+# =========================================================================
+# /uploads/.htaccess — Yüklenen Medya Klasörü Güvenliği
+# Bu klasörde PHP veya herhangi bir betik dosyasının çalıştırılmasını engeller.
+# =========================================================================
+
+Options -Indexes -ExecCGI
+
+<FilesMatch "\.(php|php\d|phtml|phar|cgi|pl|py|rb|sh|htaccess|ini|env)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    <FilesMatch "\.(mp4|webm)$">
+        Header set Accept-Ranges "bytes"
+    </FilesMatch>
+</IfModule>

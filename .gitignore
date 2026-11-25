@@ -1,0 +1,9 @@
+.env
+*.zip
+/uploads/images/20*/
+/uploads/videos/20*/
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

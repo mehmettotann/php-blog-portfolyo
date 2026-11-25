@@ -1,0 +1,110 @@
+# =========================================================================
+# example.com — LiteSpeed / Apache .htaccess Yapılandırması
+# =========================================================================
+
+Options -Indexes -MultiViews
+ServerSignature Off
+
+# -------------------------------------------------------------------------
+# 1. Hassas Dosya ve Klasörleri Koru
+# -------------------------------------------------------------------------
+<FilesMatch "(^\.env|\.env\.example|composer\.(json|lock)|router\.php|README\.md|\.sql$|\.sh$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Özel uygulama klasörlerine doğrudan erişimi engelle
+    RewriteRule ^(app|config|views|database|scripts)(/|$) - [F,L,NC]
+    # Gizli dosya ve klasörlere (.git, .env vb.) erişimi engelle
+    RewriteRule (^|/)\.(?!well-known/) - [F,L]
+
+    # Canlı ortamda HTTPS yönlendirmesi (cPanel'de SSL aktifken başındaki # işaretlerini kaldırın)
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # www -> non-www yönlendirmesi (isteğe bağlı, canlıda aktifleştirilebilir)
+    # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    # RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+    # ---------------------------------------------------------------------
+    # 2. Temiz URL (Front Controller)
+    # ---------------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# -------------------------------------------------------------------------
+# 3. LiteSpeed Cache Uyumu (Admin, İletişim POST ve Video Streaming Güvenli)
+# -------------------------------------------------------------------------
+<IfModule LiteSpeed>
+    CacheLookup on
+
+    # Yönetim panelini ve giriş yapmış admin oturumlarını önbellekleme
+    RewriteCond %{REQUEST_URI} ^/admin [NC,OR]
+    RewriteCond %{HTTP_COOKIE} bp_admin_logged_in=1 [NC]
+    RewriteRule .* - [E=Cache-Control:no-cache]
+
+    # Video dosyalarını LiteSpeed sayfa önbelleği yerine doğrudan sunucudan byte-range ile akıt
+    RewriteCond %{REQUEST_URI} \.(mp4|webm|ogg|m4v)$ [NC]
+    RewriteRule .* - [E=Cache-Control:no-cache,E=no-gzip:1,E=dont-vary:1]
+</IfModule>
+
+# -------------------------------------------------------------------------
+# 4. Video Streaming (Byte-Range) & Sıkıştırma Ayarları
+#    Video dosyaları sıkıştırılmamalı; aksi halde HTML5 video sarma (seek) bozulur.
+# -------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    <FilesMatch "\.(mp4|webm|ogg|m4v)$">
+        Header set Accept-Ranges "bytes"
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|ico|css|js|woff2)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml
+    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|webp|avif|mp4|webm|ogg|zip|gz)$ no-gzip dont-vary
+</IfModule>
+
+# -------------------------------------------------------------------------
+# 5. Statik Dosya Tarayıcı Önbelleği
+# -------------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 3 months"
+    ExpiresByType image/png "access plus 3 months"
+    ExpiresByType image/webp "access plus 3 months"
+    ExpiresByType image/avif "access plus 3 months"
+    ExpiresByType image/svg+xml "access plus 3 months"
+    ExpiresByType video/mp4 "access plus 1 month"
+    ExpiresByType video/webm "access plus 1 month"
+</IfModule>
+
+# -------------------------------------------------------------------------
+# 6. MIME Türleri (Video/WebP güvencesi)
+# -------------------------------------------------------------------------
+<IfModule mod_mime.c>
+    AddType video/mp4 .mp4 .m4v
+    AddType video/webm .webm
+    AddType image/webp .webp
+    AddType image/avif .avif
+</IfModule>
