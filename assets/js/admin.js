@@ -200,6 +200,437 @@
     });
 
     // =========================================================================
+    // Zengin Metin & Medya Editörü (WYSIWYG — Post & Project Forms)
+    // =========================================================================
+    document.querySelectorAll('[data-rich-editor]').forEach(function (root) {
+        const surface = root.querySelector('[data-re-surface]');
+        const sourceArea = root.querySelector('[data-re-source]');
+        const hiddenArea = root.querySelector('[data-re-hidden]');
+        const progressBar = root.querySelector('[data-re-progress]');
+        const progressFill = root.querySelector('[data-re-progress-fill]');
+        const progressText = root.querySelector('[data-re-progress-text]');
+        const toggleSourceBtn = root.querySelector('[data-re-toggle-source]');
+        if (!surface || !hiddenArea) return;
+
+        let savedRange = null;
+        let isSourceMode = false;
+
+        try {
+            document.execCommand('defaultParagraphSeparator', false, 'p');
+        } catch (_) {
+            // Ignore in unsupported browsers
+        }
+
+        function setProgress(show, pct, text) {
+            if (!progressBar) return;
+            progressBar.hidden = !show;
+            if (progressFill) progressFill.style.width = (pct || 0) + '%';
+            if (progressText) progressText.textContent = text || '';
+        }
+
+        function saveSelection() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0);
+            if (surface.contains(range.commonAncestorContainer)) {
+                savedRange = range.cloneRange();
+            }
+        }
+
+        function restoreSelection() {
+            surface.focus();
+            if (!savedRange) return;
+            const sel = window.getSelection();
+            if (!sel) return;
+            sel.removeAllRanges();
+            sel.addRange(savedRange);
+        }
+
+        function decorateMediaFigures() {
+            surface.querySelectorAll('figure.media-block').forEach(function (fig) {
+                fig.setAttribute('contenteditable', 'false');
+                const cap = fig.querySelector('figcaption');
+                if (cap) {
+                    cap.setAttribute('contenteditable', 'true');
+                }
+                if (!fig.querySelector('.re-media-remove')) {
+                    const rm = document.createElement('button');
+                    rm.type = 'button';
+                    rm.className = 're-media-remove';
+                    rm.textContent = '× Kaldır';
+                    rm.setAttribute('contenteditable', 'false');
+                    rm.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        fig.remove();
+                        syncToHidden();
+                    });
+                    fig.insertBefore(rm, fig.firstChild);
+                }
+            });
+        }
+
+        function getCleanHtml() {
+            if (isSourceMode && sourceArea) {
+                return sourceArea.value;
+            }
+            const clone = surface.cloneNode(true);
+            clone.querySelectorAll('.re-media-remove').forEach(function (el) { el.remove(); });
+            clone.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); });
+            return clone.innerHTML.trim();
+        }
+
+        function syncToHidden() {
+            hiddenArea.value = getCleanHtml();
+        }
+
+        function insertBlockHtml(htmlString) {
+            if (isSourceMode && sourceArea) {
+                sourceArea.value = sourceArea.value + '\n' + htmlString + '\n';
+                syncToHidden();
+                return;
+            }
+            restoreSelection();
+            const temp = document.createElement('div');
+            temp.innerHTML = htmlString;
+            const nodes = Array.from(temp.childNodes);
+
+            const sel = window.getSelection();
+            let insertedAfter = null;
+
+            if (sel && sel.rangeCount > 0 && surface.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                const range = sel.getRangeAt(0);
+                // Insert after top-level block inside surface so figure isn't nested inside <p>
+                let anchor = range.endContainer;
+                while (anchor && anchor.parentNode !== surface) {
+                    anchor = anchor.parentNode;
+                }
+                if (anchor && anchor.parentNode === surface) {
+                    let ref = anchor.nextSibling;
+                    nodes.forEach(function (n) {
+                        surface.insertBefore(n, ref);
+                        insertedAfter = n;
+                    });
+                } else {
+                    nodes.forEach(function (n) {
+                        surface.appendChild(n);
+                        insertedAfter = n;
+                    });
+                }
+            } else {
+                nodes.forEach(function (n) {
+                    surface.appendChild(n);
+                    insertedAfter = n;
+                });
+            }
+
+            // Always ensure an editable paragraph exists right after the inserted media/code block
+            const p = document.createElement('p');
+            p.innerHTML = '<br>';
+            if (insertedAfter && insertedAfter.parentNode === surface) {
+                surface.insertBefore(p, insertedAfter.nextSibling);
+            } else {
+                surface.appendChild(p);
+            }
+
+            decorateMediaFigures();
+
+            // Move cursor into the new paragraph below
+            const newRange = document.createRange();
+            newRange.setStart(p, 0);
+            newRange.collapse(true);
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
+            savedRange = newRange.cloneRange();
+            syncToHidden();
+        }
+
+        function insertImageFigure(path, caption) {
+            const cap = caption || '';
+            const html =
+                '<figure class="media-block media-image">' +
+                '<img src="' + esc(path) + '" alt="' + esc(cap || 'Görsel') + '" loading="lazy" decoding="async">' +
+                '<figcaption class="media-caption">' + esc(cap || 'Görsel açıklaması (isteğe bağlı)') + '</figcaption>' +
+                '</figure>';
+            insertBlockHtml(html);
+        }
+
+        function insertLocalVideoFigure(path, poster, caption) {
+            const ext = (path.split('.').pop() || '').toLowerCase().split('?')[0];
+            const mime = ext === 'webm' ? 'video/webm' : 'video/mp4';
+            const posterAttr = poster ? ' poster="' + esc(poster) + '"' : '';
+            const html =
+                '<figure class="media-block media-video-local">' +
+                '<div class="video-player-shell">' +
+                '<video class="html5-video-player" controls playsinline preload="metadata"' + posterAttr + '>' +
+                '<source src="' + esc(path) + '" type="' + mime + '">' +
+                '</video>' +
+                '</div>' +
+                '<figcaption class="media-caption">' + esc(caption || 'Video açıklaması (isteğe bağlı)') + '</figcaption>' +
+                '</figure>';
+            insertBlockHtml(html);
+        }
+
+        function insertExternalVideoFigure(url, caption) {
+            const parsed = parseVideoUrl(url);
+            if (!parsed) {
+                alert('Geçerli bir YouTube veya Vimeo bağlantısı girin.');
+                return;
+            }
+            const html =
+                '<figure class="media-block media-video-external">' +
+                '<div class="video-embed-16x9">' +
+                '<iframe src="' + esc(parsed.embed_url) + '" title="' + esc(caption || parsed.label) + '" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>' +
+                '</div>' +
+                '<figcaption class="media-caption">' + esc(caption || parsed.label) + '</figcaption>' +
+                '</figure>';
+            insertBlockHtml(html);
+        }
+
+        async function uploadAndInsertImages(files) {
+            for (let i = 0; i < files.length; i++) {
+                const f = files[i];
+                if (!f.type.startsWith('image/')) continue;
+                setProgress(true, 5, 'Görsel yükleniyor (' + (i + 1) + '/' + files.length + '): ' + f.name);
+                try {
+                    const up = await uploadFileAjax(f, 'image', function (pct) {
+                        setProgress(true, pct, 'Görsel yükleniyor (' + (i + 1) + '/' + files.length + ') %' + pct);
+                    });
+                    insertImageFigure(up.path, '');
+                } catch (err) {
+                    alert(f.name + ': ' + err.message);
+                }
+            }
+            setProgress(false);
+        }
+
+        // Track cursor position
+        surface.addEventListener('keyup', saveSelection);
+        surface.addEventListener('mouseup', saveSelection);
+        surface.addEventListener('blur', function () { saveSelection(); syncToHidden(); });
+        surface.addEventListener('input', syncToHidden);
+
+        // Toolbar: inline commands (B, I, U, lists, hr, removeFormat)
+        root.querySelectorAll('[data-re-cmd]').forEach(function (btn) {
+            btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            btn.addEventListener('click', function () {
+                if (isSourceMode) return;
+                restoreSelection();
+                document.execCommand(btn.getAttribute('data-re-cmd'), false, null);
+                saveSelection();
+                syncToHidden();
+            });
+        });
+
+        // Toolbar: block format (P, H2, H3)
+        root.querySelectorAll('[data-re-block]').forEach(function (btn) {
+            btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            btn.addEventListener('click', function () {
+                if (isSourceMode) return;
+                restoreSelection();
+                document.execCommand('formatBlock', false, btn.getAttribute('data-re-block'));
+                saveSelection();
+                syncToHidden();
+            });
+        });
+
+        // Toolbar: Quote
+        const quoteBtn = root.querySelector('[data-re-quote]');
+        if (quoteBtn) {
+            quoteBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            quoteBtn.addEventListener('click', function () {
+                if (isSourceMode) return;
+                restoreSelection();
+                const selText = (window.getSelection() || '').toString().trim();
+                insertBlockHtml('<blockquote class="content-quote"><p>' + esc(selText || 'Alıntı metnini buraya yazın...') + '</p></blockquote>');
+            });
+        }
+
+        // Toolbar: Code Block
+        const codeBtn = root.querySelector('[data-re-code]');
+        if (codeBtn) {
+            codeBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            codeBtn.addEventListener('click', function () {
+                if (isSourceMode) return;
+                restoreSelection();
+                const selText = (window.getSelection() || '').toString();
+                const lang = prompt('Kod dili (isteğe bağlı — örn: php, bash, sql, html):', 'php');
+                if (lang === null) return;
+                const cleanLang = lang.trim();
+                const header = cleanLang ? '<div class="code-block-header"><span>' + esc(cleanLang) + '</span></div>' : '';
+                insertBlockHtml('<div class="code-block">' + header + '<pre><code>' + esc(selText || '// Kodunuzu buraya yazın') + '</code></pre></div>');
+            });
+        }
+
+        // Toolbar: Link
+        const linkBtn = root.querySelector('[data-re-link]');
+        if (linkBtn) {
+            linkBtn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            linkBtn.addEventListener('click', function () {
+                if (isSourceMode) return;
+                restoreSelection();
+                const url = prompt('Bağlantı adresi (https://... veya /sayfa):', 'https://');
+                if (!url || !url.trim()) return;
+                const trimmed = url.trim();
+                if (!/^(https?:\/\/|\/|mailto:)/i.test(trimmed)) {
+                    alert('Lütfen https://, http:// veya / ile başlayan geçerli bir bağlantı girin.');
+                    return;
+                }
+                const sel = window.getSelection();
+                if (sel && sel.toString().trim() !== '') {
+                    document.execCommand('createLink', false, trimmed);
+                } else {
+                    const label = prompt('Bağlantı metni:', trimmed) || trimmed;
+                    document.execCommand('insertHTML', false, '<a href="' + esc(trimmed) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>');
+                }
+                syncToHidden();
+            });
+        }
+
+        // Toolbar: Upload Image(s)
+        const upImgInput = root.querySelector('[data-re-upload-image]');
+        if (upImgInput) {
+            upImgInput.addEventListener('change', async function () {
+                const files = Array.from(upImgInput.files || []);
+                if (files.length === 0) return;
+                await uploadAndInsertImages(files);
+                upImgInput.value = '';
+            });
+        }
+
+        // Toolbar: Pick Image from Library
+        const pickImgBtn = root.querySelector('[data-re-pick-image]');
+        if (pickImgBtn) {
+            pickImgBtn.addEventListener('mousedown', function (e) { e.preventDefault(); saveSelection(); });
+            pickImgBtn.addEventListener('click', function () {
+                openMediaPicker('image', function (path) {
+                    insertImageFigure(path, '');
+                });
+            });
+        }
+
+        // Toolbar: Upload Local Video (MP4 / WebM)
+        const upVidInput = root.querySelector('[data-re-upload-video]');
+        if (upVidInput) {
+            upVidInput.addEventListener('change', function () {
+                const file = upVidInput.files && upVidInput.files[0];
+                if (!file) return;
+                setProgress(true, 5, 'Video yükleniyor: ' + file.name);
+                uploadFileAjax(file, 'video', function (pct) {
+                    setProgress(true, pct, 'Video yükleniyor %' + pct + ' — ' + file.name);
+                })
+                    .then(function (up) {
+                        setProgress(false);
+                        insertLocalVideoFigure(up.path, '', '');
+                        upVidInput.value = '';
+                    })
+                    .catch(function (err) {
+                        setProgress(false);
+                        alert(err.message);
+                        upVidInput.value = '';
+                    });
+            });
+        }
+
+        // Toolbar: Pick Server Video
+        const pickVidBtn = root.querySelector('[data-re-pick-video]');
+        if (pickVidBtn) {
+            pickVidBtn.addEventListener('mousedown', function (e) { e.preventDefault(); saveSelection(); });
+            pickVidBtn.addEventListener('click', function () {
+                openMediaPicker('video', function (path) {
+                    insertLocalVideoFigure(path, '', '');
+                });
+            });
+        }
+
+        // Toolbar: Insert External YouTube / Vimeo Video
+        const extVidBtn = root.querySelector('[data-re-ext-video]');
+        if (extVidBtn) {
+            extVidBtn.addEventListener('mousedown', function (e) { e.preventDefault(); saveSelection(); });
+            extVidBtn.addEventListener('click', function () {
+                const url = prompt('YouTube veya Vimeo video bağlantısını yapıştırın:');
+                if (!url || !url.trim()) return;
+                insertExternalVideoFigure(url.trim(), '');
+            });
+        }
+
+        // Toolbar: Toggle HTML Source View
+        if (toggleSourceBtn && sourceArea) {
+            toggleSourceBtn.addEventListener('click', function () {
+                if (!isSourceMode) {
+                    sourceArea.value = getCleanHtml();
+                    surface.hidden = true;
+                    sourceArea.hidden = false;
+                    isSourceMode = true;
+                    toggleSourceBtn.classList.add('is-active');
+                } else {
+                    surface.innerHTML = sourceArea.value || '<p><br></p>';
+                    decorateMediaFigures();
+                    sourceArea.hidden = true;
+                    surface.hidden = false;
+                    isSourceMode = false;
+                    toggleSourceBtn.classList.remove('is-active');
+                    syncToHidden();
+                }
+            });
+            sourceArea.addEventListener('input', syncToHidden);
+        }
+
+        // Paste: upload pasted clipboard images automatically; keep clean text/structure
+        surface.addEventListener('paste', function (e) {
+            const clip = e.clipboardData;
+            if (!clip) return;
+
+            const imageFiles = [];
+            if (clip.items) {
+                for (let i = 0; i < clip.items.length; i++) {
+                    if (clip.items[i].type && clip.items[i].type.startsWith('image/')) {
+                        const f = clip.items[i].getAsFile();
+                        if (f) imageFiles.push(f);
+                    }
+                }
+            }
+            if (imageFiles.length > 0) {
+                e.preventDefault();
+                saveSelection();
+                uploadAndInsertImages(imageFiles);
+            }
+        });
+
+        // Drag & Drop images directly onto editor
+        surface.addEventListener('dragover', function (e) {
+            if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.indexOf('Files') !== -1) {
+                e.preventDefault();
+                surface.classList.add('is-dragover');
+            }
+        });
+        surface.addEventListener('dragleave', function () {
+            surface.classList.remove('is-dragover');
+        });
+        surface.addEventListener('drop', function (e) {
+            surface.classList.remove('is-dragover');
+            const files = e.dataTransfer && e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+            if (files.length === 0) return;
+            e.preventDefault();
+            saveSelection();
+            const imgs = files.filter(function (f) { return f.type.startsWith('image/'); });
+            if (imgs.length > 0) {
+                uploadAndInsertImages(imgs);
+            }
+        });
+
+        // Initial decoration & form submit sync
+        decorateMediaFigures();
+        syncToHidden();
+        const form = root.closest('form');
+        if (form) {
+            form.addEventListener('submit', syncToHidden);
+        }
+    });
+
+    // =========================================================================
     // Block-Based Content Editor (Blog Posts & Project Stories)
     // =========================================================================
     const blockLabels = {

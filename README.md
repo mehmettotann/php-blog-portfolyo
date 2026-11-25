@@ -16,7 +16,8 @@ Paylaşımlı hosting (cPanel / Plesk + LiteSpeed, 1 GB RAM / 1 Core CPU) ve lok
   - **Kendi Videolarım (Self-Hosted):** MP4/WebM yükleme veya sunucudaki videoyu seçme, poster görseli, `preload="metadata"` ve HTTP 206 Byte-Range destekli responsive HTML5 oynatıcı.
   - **Harici Videolar (YouTube / Vimeo):** Sadece video URL'sini yapıştırın; sistem video ID'sini otomatik ayrıştırıp responsive 16:9 `loading="lazy"` iframe olarak yerleştirir.
 - **Yönetim Paneli (`/admin`):**
-  - Blok tabanlı içerik düzenleyici (Paragraf, H2/H3 Başlık, Görsel, Yerel Video, YouTube/Vimeo, Liste, Alıntı, Kod).
+  - **Zengin Metin & Medya Editörü (WYSIWYG):** Paragraf, H2/H3 başlık, kalın/italik/altı çizili, liste, alıntı, kod bloğu, link, HTML kaynak görünümü; editör içinden imlecin olduğu yere doğrudan görsel yükleme (Ctrl+V yapıştırma & sürükle-bırak destekli), kütüphaneden seçme, yerel MP4/WebM video yükleme ve YouTube/Vimeo gömme.
+  - Sunucu tarafı `DOMDocument` tabanlı sıkı HTML temizleme (XSS koruması).
   - Proje çoklu görsel & çoklu video yöneticisi (sıralama + ilerleme çubuklu AJAX yükleyici).
   - Medya kütüphanesi, kategori yönetimi, site/hakkımda ayarları, varsayılan sosyal paylaşım görseli ve gelen mesaj yönetimi.
 - **SEO & Sosyal Medya Paylaşımı:**

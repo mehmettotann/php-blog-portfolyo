@@ -45,32 +45,19 @@ if (!empty($post['published_at'])) {
             </div>
         </div>
 
-        <!-- Blok Tabanlı Zengin İçerik Düzenleyici -->
+        <!-- Zengin Metin & Medya Editörü (WYSIWYG) -->
         <div class="admin-card">
             <div class="admin-card-head">
                 <div>
-                    <h2>Yazı İçeriği (Blok Düzenleyici)</h2>
-                    <p class="muted-text small-note">Paragraflar arasına dilediğiniz kadar görsel, kendi MP4/WebM videonuzu, YouTube/Vimeo videosu, kod veya alıntı ekleyip sıralayabilirsiniz.</p>
+                    <h2>Yazı İçeriği</h2>
+                    <p class="muted-text small-note">Word/blog editörü gibi doğrudan yazın; istediğiniz satıra görsel, kendi MP4/WebM videonuzu veya YouTube/Vimeo videosu ekleyin.</p>
                 </div>
             </div>
 
-            <textarea name="content_blocks_json" id="content-blocks-json" hidden><?= Helpers::e((string) ($post['content_blocks'] ?? '[]')) ?></textarea>
-
-            <div class="block-editor" data-block-editor data-target-input="content-blocks-json" data-max-image="<?= (int) $maxImageMb ?>" data-max-video="<?= (int) $maxVideoMb ?>">
-                <div class="blocks-container" data-blocks-list></div>
-
-                <div class="block-add-bar">
-                    <span class="meta-label">Blok Ekle:</span>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="paragraph">+ Paragraf</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="heading">+ Alt Başlık</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="image">+ Görsel</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="video_local">+ Kendi Videom (MP4/WebM)</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="video_external">+ YouTube / Vimeo</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="list">+ Liste</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="quote">+ Alıntı</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="code">+ Kod</button>
-                </div>
-            </div>
+            <?php
+            $editorInputName = 'content_html';
+            require __DIR__ . '/_rich_editor.php';
+            ?>
         </div>
     </div>
 

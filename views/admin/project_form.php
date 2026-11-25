@@ -87,30 +87,19 @@ $mediaJson = json_encode($mediaItems, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SL
             </div>
         </div>
 
-        <!-- Proje Detaylı Açıklama Blokları -->
+        <!-- Proje Detaylı Açıklama Editörü (WYSIWYG) -->
         <div class="admin-card">
             <div class="admin-card-head">
                 <div>
-                    <h2>Detaylı Proje Hikayesi (Blok Düzenleyici)</h2>
-                    <p class="muted-text small-note">Projenin mimarisini, karşılaşılan zorlukları ve sonuçları detaylı olarak anlatabilirsiniz.</p>
+                    <h2>Proje Açıklaması &amp; Hikayesi</h2>
+                    <p class="muted-text small-note">Projenin özelliklerini, ekran görüntülerini, kod örneklerini ve videolarını tek bir akıcı editör içinden ekleyin.</p>
                 </div>
             </div>
 
-            <textarea name="content_blocks_json" id="project-blocks-json" hidden><?= Helpers::e((string) ($project['description_blocks'] ?? '[]')) ?></textarea>
-
-            <div class="block-editor" data-block-editor data-target-input="project-blocks-json" data-max-image="<?= (int) $maxImageMb ?>" data-max-video="<?= (int) $maxVideoMb ?>">
-                <div class="blocks-container" data-blocks-list></div>
-                <div class="block-add-bar">
-                    <span class="meta-label">Blok Ekle:</span>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="paragraph">+ Paragraf</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="heading">+ Alt Başlık</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="image">+ Görsel</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="video_local">+ Yerel Video</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="video_external">+ YouTube/Vimeo</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="list">+ Liste</button>
-                    <button type="button" class="btn btn-secondary btn-xs" data-add-block="code">+ Kod</button>
-                </div>
-            </div>
+            <?php
+            $editorInputName = 'content_html';
+            require __DIR__ . '/_rich_editor.php';
+            ?>
         </div>
     </div>
 

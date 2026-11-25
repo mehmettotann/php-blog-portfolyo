@@ -93,6 +93,14 @@ final class Seo
             if (!is_array($block)) {
                 continue;
             }
+            if (($block['type'] ?? '') === 'html' && !empty($block['html']) && is_string($block['html'])) {
+                if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/i', $block['html'], $m)) {
+                    return trim($m[1]);
+                }
+                if (preg_match('/<video[^>]+poster=["\']([^"\']+)["\']/i', $block['html'], $m)) {
+                    return trim($m[1]);
+                }
+            }
             if (($block['type'] ?? '') === 'image' && !empty($block['src']) && is_string($block['src'])) {
                 return trim($block['src']);
             }

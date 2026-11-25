@@ -23,8 +23,8 @@ $flashes = Helpers::getFlashes();
             document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
         })();
     </script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=1.0">
-    <link rel="stylesheet" href="/assets/css/admin.css?v=1.0">
+    <link rel="stylesheet" href="/assets/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/assets/css/admin.css?v=1.1">
 </head>
 <body class="admin-body">
     <div class="admin-shell">
@@ -112,7 +112,7 @@ $flashes = Helpers::getFlashes();
         </div>
     </div>
 
-    <script src="/assets/js/app.js?v=1.0" defer></script>
-    <script src="/assets/js/admin.js?v=1.0" defer></script>
+    <script src="/assets/js/app.js?v=1.1" defer></script>
+    <script src="/assets/js/admin.js?v=1.1" defer></script>
 </body>
 </html>

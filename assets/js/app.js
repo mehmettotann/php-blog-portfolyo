@@ -95,6 +95,27 @@
                 return;
             }
 
+            // Also support direct images inserted via WYSIWYG editor inside .prose
+            const proseImg = e.target.closest('.prose img');
+            if (proseImg && !proseImg.closest('.lightbox-trigger') && !proseImg.closest('.rich-editor')) {
+                e.preventDefault();
+                const proseRoot = proseImg.closest('.prose');
+                const imgs = proseRoot ? Array.from(proseRoot.querySelectorAll('img')) : [proseImg];
+                const groupItems = imgs.map(function (img) {
+                    const fig = img.closest('figure');
+                    const capEl = fig ? fig.querySelector('figcaption') : null;
+                    return {
+                        src: img.getAttribute('src') || '',
+                        caption: (capEl ? capEl.textContent.trim() : '') || img.getAttribute('alt') || ''
+                    };
+                }).filter(function (it) { return it.src !== ''; });
+                const idx = Math.max(0, imgs.indexOf(proseImg));
+                if (groupItems.length > 0) {
+                    openLightbox(groupItems, idx);
+                }
+                return;
+            }
+
             if (e.target.closest('[data-lightbox-close]')) {
                 closeLightbox();
             }

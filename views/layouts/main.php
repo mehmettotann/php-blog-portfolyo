@@ -100,7 +100,7 @@ $flashes = Helpers::getFlashes();
         })();
     </script>
 
-    <link rel="stylesheet" href="/assets/css/style.css?v=1.0">
+    <link rel="stylesheet" href="/assets/css/style.css?v=1.1">
 </head>
 <body>
     <a class="skip-link" href="#main-content">İçeriğe geç</a>
@@ -212,6 +212,6 @@ $flashes = Helpers::getFlashes();
         </div>
     </div>
 
-    <script src="/assets/js/app.js?v=1.0" defer></script>
+    <script src="/assets/js/app.js?v=1.1" defer></script>
 </body>
 </html>

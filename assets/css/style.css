@@ -951,10 +951,17 @@ h1, h2, h3, h4 {
     display: block;
 }
 
-.media-image img {
-    width: 100%;
+.media-image img,
+.prose img {
+    max-width: 100%;
+    height: auto;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
+    cursor: zoom-in;
+}
+
+.media-image img {
+    width: 100%;
 }
 
 .video-player-shell {

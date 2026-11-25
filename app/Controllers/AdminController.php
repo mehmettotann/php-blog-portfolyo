@@ -165,6 +165,7 @@ final class AdminController
                     ['type' => 'paragraph', 'text' => ''],
                 ], JSON_UNESCAPED_UNICODE),
             ],
+            'editorHtml' => '<p><br></p>',
             'categories' => $categories,
             'maxImageMb' => (int) ($this->config['uploads']['max_image_mb'] ?? 10),
             'maxVideoMb' => (int) ($this->config['uploads']['max_video_mb'] ?? 150),
@@ -185,11 +186,14 @@ final class AdminController
         }
 
         $categories = $pdo->query('SELECT id, name FROM categories ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
+        $decodedBlocks = json_decode((string) ($post['content_blocks'] ?? '[]'), true);
+        $editorHtml = MediaRenderer::renderForEditor(is_array($decodedBlocks) ? $decodedBlocks : []);
 
         $this->renderAdmin('admin/post_form', [
             'pageTitle' => 'Yazıyı Düzenle',
             'activeAdminNav' => 'posts',
             'post' => $post,
+            'editorHtml' => $editorHtml,
             'categories' => $categories,
             'maxImageMb' => (int) ($this->config['uploads']['max_image_mb'] ?? 10),
             'maxVideoMb' => (int) ($this->config['uploads']['max_video_mb'] ?? 150),
@@ -228,7 +232,12 @@ final class AdminController
             }
         }
 
-        $blocks = $this->sanitizeBlocks($blocksRaw);
+        if (isset($_POST['content_html'])) {
+            $cleanHtml = MediaRenderer::sanitizeHtml((string) $_POST['content_html']);
+            $blocks = $cleanHtml !== '' ? [['type' => 'html', 'html' => $cleanHtml]] : [];
+        } else {
+            $blocks = $this->sanitizeBlocks($blocksRaw);
+        }
         $plainText = MediaRenderer::extractPlainText($blocks);
         $readingTime = Helpers::estimateReadingTime($title . ' ' . $excerpt . ' ' . $plainText);
         $slug = Helpers::uniqueSlug('posts', $rawSlug !== '' ? $rawSlug : $title, $id > 0 ? $id : null);
@@ -417,6 +426,7 @@ final class AdminController
                     ['type' => 'paragraph', 'text' => ''],
                 ], JSON_UNESCAPED_UNICODE),
             ],
+            'editorHtml' => '<p><br></p>',
             'mediaItems' => [],
             'maxImageMb' => (int) ($this->config['uploads']['max_image_mb'] ?? 10),
             'maxVideoMb' => (int) ($this->config['uploads']['max_video_mb'] ?? 150),
@@ -440,10 +450,14 @@ final class AdminController
         $mediaStmt->execute([':pid' => $id]);
         $mediaItems = $mediaStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $decodedBlocks = json_decode((string) ($project['description_blocks'] ?? '[]'), true);
+        $editorHtml = MediaRenderer::renderForEditor(is_array($decodedBlocks) ? $decodedBlocks : []);
+
         $this->renderAdmin('admin/project_form', [
             'pageTitle' => 'Projeyi Düzenle',
             'activeAdminNav' => 'projects',
             'project' => $project,
+            'editorHtml' => $editorHtml,
             'mediaItems' => $mediaItems,
             'maxImageMb' => (int) ($this->config['uploads']['max_image_mb'] ?? 10),
             'maxVideoMb' => (int) ($this->config['uploads']['max_video_mb'] ?? 150),
@@ -485,7 +499,12 @@ final class AdminController
             }
         }
 
-        $blocks = $this->sanitizeBlocks((string) ($_POST['content_blocks_json'] ?? '[]'));
+        if (isset($_POST['content_html'])) {
+            $cleanHtml = MediaRenderer::sanitizeHtml((string) $_POST['content_html']);
+            $blocks = $cleanHtml !== '' ? [['type' => 'html', 'html' => $cleanHtml]] : [];
+        } else {
+            $blocks = $this->sanitizeBlocks((string) ($_POST['content_blocks_json'] ?? '[]'));
+        }
         $blocksJson = json_encode($blocks, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
         $slug = Helpers::uniqueSlug('projects', $rawSlug !== '' ? $rawSlug : $title, $id > 0 ? $id : null);
 
