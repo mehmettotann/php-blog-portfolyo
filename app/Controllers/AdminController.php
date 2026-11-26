@@ -276,7 +276,7 @@ final class AdminController
                 ':pub' => $publishedAt,
                 ':id' => $id,
             ]);
-            LiteSpeed::purge(['home', 'posts', 'post_' . $id, 'sitemap', 'rss']);
+            LiteSpeed::purge(['home', 'posts', 'post_' . $id, 'sitemap', 'rss', 'llms']);
             Helpers::flash('success', 'Blog yazısı güncellendi.');
             Helpers::redirect("/admin/yazilar/{$id}/duzenle");
         }
@@ -298,7 +298,7 @@ final class AdminController
             ':pub' => $publishedAt,
         ]);
         $newId = (int) $pdo->lastInsertId();
-        LiteSpeed::purge(['home', 'posts', 'sitemap', 'rss']);
+        LiteSpeed::purge(['home', 'posts', 'sitemap', 'rss', 'llms']);
         Helpers::flash('success', 'Yeni blog yazısı oluşturuldu.');
         Helpers::redirect("/admin/yazilar/{$newId}/duzenle");
     }
@@ -615,7 +615,7 @@ final class AdminController
             }
 
             $pdo->commit();
-            LiteSpeed::purge(['home', 'projects', 'project_' . $projectId, 'sitemap']);
+            LiteSpeed::purge(['home', 'projects', 'project_' . $projectId, 'sitemap', 'llms']);
             Helpers::flash('success', $id > 0 ? 'Proje güncellendi.' : 'Yeni proje oluşturuldu.');
             Helpers::redirect("/admin/projeler/{$projectId}/duzenle");
         } catch (Throwable $e) {
@@ -632,7 +632,7 @@ final class AdminController
 
         $stmt = Database::pdo()->prepare('DELETE FROM projects WHERE id = :id');
         $stmt->execute([':id' => $id]);
-        LiteSpeed::purge(['home', 'projects', 'project_' . $id, 'sitemap']);
+        LiteSpeed::purge(['home', 'projects', 'project_' . $id, 'sitemap', 'llms']);
         Helpers::flash('success', 'Proje silindi.');
         Helpers::redirect('/admin/projeler');
     }

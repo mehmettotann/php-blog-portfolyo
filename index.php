@@ -76,6 +76,7 @@ $router->post('/iletisim', static fn() => $site->contactSubmit());
 $router->get('/sitemap.xml', static fn() => $site->sitemap());
 $router->get('/rss.xml', static fn() => $site->rss());
 $router->get('/robots.txt', static fn() => $site->robots());
+$router->get('/llms.txt', static fn() => $site->llmsTxt());
 
 // Admin Auth
 $router->get('/admin/giris', static fn() => $admin->loginForm());

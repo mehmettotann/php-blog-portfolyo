@@ -747,6 +747,110 @@ final class SiteController
         echo "Sitemap: {$base}/sitemap.xml\n";
     }
 
+    /**
+     * Dynamic /llms.txt endpoint (llmstxt.org specification) for AI crawlers & assistants.
+     */
+    public function llmsTxt(): void
+    {
+        LiteSpeed::cachePublic(['site', 'posts', 'projects', 'llms'], 3600);
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        $base = $this->baseUrl();
+        $settings = Helpers::allSettings();
+        $siteTitle = $settings['site_title'] ?? 'Adınız Soyadınız';
+        $siteDesc = $settings['site_description'] ?? ($settings['site_tagline'] ?? 'Kişisel Blog ve Dijital Portfolyo');
+        $aboutIntro = trim((string) ($settings['about_intro'] ?? ''));
+        $skills = Helpers::settingJson('about_skills', []);
+        $socials = Helpers::settingJson('social_links', []);
+
+        $pdo = Database::pdo();
+
+        $projects = $pdo->query(
+            "SELECT title, slug, summary, technologies, live_url, source_url
+             FROM projects
+             WHERE status = 'published'
+             ORDER BY is_featured DESC, sort_order ASC, created_at DESC
+             LIMIT 30"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $posts = $pdo->query(
+            "SELECT p.title, p.slug, p.excerpt, p.published_at, c.name AS category_name
+             FROM posts p
+             LEFT JOIN categories c ON c.id = p.category_id
+             WHERE p.status = 'published'
+             ORDER BY COALESCE(p.published_at, p.created_at) DESC
+             LIMIT 30"
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $lines = [];
+        $lines[] = '# ' . $siteTitle;
+        $lines[] = '';
+        $lines[] = '> ' . $siteDesc;
+        $lines[] = '';
+        if ($aboutIntro !== '') {
+            $lines[] = $aboutIntro;
+            $lines[] = '';
+        }
+        if (!empty($skills)) {
+            $lines[] = 'Uzmanlık Alanları: ' . implode(', ', array_map('strval', $skills));
+            $lines[] = '';
+        }
+
+        $lines[] = '## Ana Sayfalar';
+        $lines[] = "- [Ana Sayfa]({$base}/): Kişisel tanıtım, son blog yazıları ve öne çıkan projeler.";
+        $lines[] = "- [Hakkımda]({$base}/hakkimda): Biyografi, uzmanlık alanları, eğitim/deneyim ve ilgi alanları.";
+        $lines[] = "- [Yazılar / Blog]({$base}/yazilar): Teknoloji, yazılım, inceleme ve öğrenme notları.";
+        $lines[] = "- [Projeler]({$base}/projeler): Geliştirilen yazılımlar, açık kaynak çalışmalar, görseller ve demolar.";
+        $lines[] = "- [İletişim]({$base}/iletisim): İletişim formu ve sosyal medya bağlantıları.";
+        $lines[] = '';
+
+        if (!empty($projects)) {
+            $lines[] = '## Projeler';
+            foreach ($projects as $pr) {
+                $url = $base . '/projeler/' . rawurlencode((string) $pr['slug']);
+                $desc = trim((string) ($pr['summary'] ?? ''));
+                $tech = trim((string) ($pr['technologies'] ?? ''));
+                $extra = [];
+                if ($tech !== '') {
+                    $extra[] = 'Teknolojiler: ' . $tech;
+                }
+                if (!empty($pr['source_url'])) {
+                    $extra[] = 'Kaynak: ' . $pr['source_url'];
+                }
+                $suffix = $extra !== [] ? (' (' . implode(' | ', $extra) . ')') : '';
+                $lines[] = "- [{$pr['title']}]({$url}): {$desc}{$suffix}";
+            }
+            $lines[] = '';
+        }
+
+        if (!empty($posts)) {
+            $lines[] = '## Blog Yazıları';
+            foreach ($posts as $p) {
+                $url = $base . '/yazilar/' . rawurlencode((string) $p['slug']);
+                $cat = !empty($p['category_name']) ? ('[' . $p['category_name'] . '] ') : '';
+                $excerpt = trim((string) ($p['excerpt'] ?? ''));
+                $lines[] = "- [{$p['title']}]({$url}): {$cat}{$excerpt}";
+            }
+            $lines[] = '';
+        }
+
+        if (!empty($socials)) {
+            $lines[] = '## Sosyal Medya & Bağlantılar';
+            foreach ($socials as $k => $v) {
+                if (is_string($v) && $v !== '') {
+                    $lines[] = '- ' . ucfirst((string) $k) . ': ' . $v;
+                }
+            }
+            $lines[] = '';
+        }
+
+        $lines[] = '## İndeks ve Beslemeler';
+        $lines[] = "- [Site Haritası (XML)]({$base}/sitemap.xml)";
+        $lines[] = "- [RSS Beslemesi]({$base}/rss.xml)";
+
+        echo implode("\n", $lines) . "\n";
+    }
+
     public function notFound(): void
     {
         http_response_code(404);

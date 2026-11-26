@@ -20,8 +20,8 @@ Paylaşımlı hosting (cPanel / Plesk + LiteSpeed, 1 GB RAM / 1 Core CPU) ve lok
   - Sunucu tarafı `DOMDocument` tabanlı sıkı HTML temizleme (XSS koruması).
   - Proje çoklu görsel & çoklu video yöneticisi (sıralama + ilerleme çubuklu AJAX yükleyici).
   - Medya kütüphanesi, kategori yönetimi, site/hakkımda ayarları, varsayılan sosyal paylaşım görseli ve gelen mesaj yönetimi.
-- **SEO & Sosyal Medya Paylaşımı:**
-  - Temiz Türkçe URL'ler (`/yazilar/{slug}`, `/projeler/{slug}`), dinamik canonical URL'ler, `/sitemap.xml`, `/rss.xml`, `/robots.txt`.
+- **SEO, Yapay Zeka & Sosyal Medya Paylaşımı:**
+  - Temiz Türkçe URL'ler (`/yazilar/{slug}`, `/projeler/{slug}`), dinamik canonical URL'ler, `/sitemap.xml`, `/rss.xml`, `/robots.txt` ve yapay zeka asistanları için dinamik **`/llms.txt`** (`llmstxt.org`).
   - Schema.org JSON-LD (`WebSite`, `Person`, `BlogPosting`, `CreativeWork`, `BreadcrumbList`).
   - WhatsApp, Telegram, X ve LinkedIn için otomatik kapak görselli Open Graph & Twitter Card önizlemeleri.
 - **Güvenlik & Performans:**
