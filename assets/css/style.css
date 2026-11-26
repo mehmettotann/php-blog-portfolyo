@@ -1378,6 +1378,96 @@ textarea {
     padding: 4rem 0;
 }
 
+/* Share Bar (WhatsApp, Facebook, X, LinkedIn, Telegram, Instagram, Copy) */
+.inline-share-wrap {
+    margin-top: 2.5rem;
+}
+
+.project-share-section {
+    padding: 0 0 3.25rem;
+}
+
+.global-share-band {
+    padding: 2rem 0;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.share-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem 1.2rem;
+    padding: 1.05rem 1.25rem;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.share-bar-label {
+    font-family: var(--font-display);
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.share-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    padding: 0.44rem 0.78rem;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.share-btn:hover {
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.share-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.share-whatsapp:hover { background: #25d366; border-color: #25d366; }
+.share-facebook:hover { background: #1877f2; border-color: #1877f2; }
+.share-x:hover        { background: #0f172a; border-color: #0f172a; }
+[data-theme="dark"] .share-x:hover { background: #e2e8f0; border-color: #e2e8f0; color: #0f172a; }
+.share-linkedin:hover { background: #0a66c2; border-color: #0a66c2; }
+.share-telegram:hover { background: #229ed9; border-color: #229ed9; }
+.share-instagram:hover { background: #e1306c; border-color: #e1306c; }
+.share-copy:hover     { background: var(--accent); border-color: var(--accent); }
+.share-copy.is-copied { background: var(--success); border-color: var(--success); color: #fff; }
+
+.share-feedback {
+    width: 100%;
+    font-size: 0.82rem;
+    color: var(--success);
+    font-weight: 500;
+}
+
+.share-feedback:empty {
+    display: none;
+}
+
 /* Footer */
 .site-footer {
     margin-top: auto;

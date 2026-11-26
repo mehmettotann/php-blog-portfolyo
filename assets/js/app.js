@@ -131,4 +131,77 @@
             if (e.key === 'ArrowRight') step(1);
         });
     }
+
+    // 4. Social Share Buttons (Copy Link + Instagram / Native Mobile Web Share API)
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise(function (resolve, reject) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                resolve();
+            } catch (err) {
+                reject(err);
+            } finally {
+                ta.remove();
+            }
+        });
+    }
+
+    document.querySelectorAll('[data-share-bar]').forEach(function (bar) {
+        const shareUrl = bar.getAttribute('data-share-url') || window.location.href;
+        const shareTitle = bar.getAttribute('data-share-title') || document.title;
+        const feedback = bar.querySelector('[data-share-feedback]');
+        const copyBtn = bar.querySelector('[data-share-copy]');
+        const copyLabel = bar.querySelector('[data-share-copy-label]');
+        const igBtn = bar.querySelector('[data-share-instagram]');
+
+        let fbTimer = null;
+        function showFeedback(msg) {
+            if (!feedback) return;
+            feedback.textContent = msg;
+            if (fbTimer) clearTimeout(fbTimer);
+            fbTimer = setTimeout(function () { feedback.textContent = ''; }, 3200);
+        }
+
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function () {
+                copyTextToClipboard(shareUrl).then(function () {
+                    copyBtn.classList.add('is-copied');
+                    if (copyLabel) copyLabel.textContent = 'Kopyalandı ✓';
+                    showFeedback('Bağlantı panoya kopyalandı.');
+                    setTimeout(function () {
+                        copyBtn.classList.remove('is-copied');
+                        if (copyLabel) copyLabel.textContent = 'Kopyala';
+                    }, 2200);
+                });
+            });
+        }
+
+        if (igBtn) {
+            igBtn.addEventListener('click', function () {
+                if (navigator.share) {
+                    navigator.share({
+                        title: shareTitle,
+                        text: shareTitle,
+                        url: shareUrl
+                    }).catch(function () {
+                        // User cancelled share sheet
+                    });
+                    return;
+                }
+                copyTextToClipboard(shareUrl).then(function () {
+                    showFeedback('Bağlantı kopyalandı — Instagram hikaye veya mesajınıza yapıştırabilirsiniz.');
+                });
+            });
+        }
+    });
 })();

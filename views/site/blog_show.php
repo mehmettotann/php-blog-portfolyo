@@ -51,6 +51,15 @@ use App\MediaRenderer;
             <?= MediaRenderer::renderBlocks($blocks) ?>
         </div>
 
+        <div class="inline-share-wrap">
+            <?php
+            $shareHeading = 'Bu yazıyı paylaş';
+            $shareTitle = (string) $post['title'];
+            $shareUrl = (string) ($canonicalUrl ?? '');
+            require __DIR__ . '/_share_bar.php';
+            ?>
+        </div>
+
         <footer class="article-footer">
             <a href="/yazilar" class="link-arrow">← Tüm yazılara dön</a>
             <a href="/iletisim" class="link-arrow">Bu yazı hakkında görüşünü paylaş →</a>

@@ -146,4 +146,15 @@ use App\MediaRenderer;
             </div>
         </section>
     <?php endif; ?>
+
+    <section class="section project-share-section">
+        <div class="container">
+            <?php
+            $shareHeading = 'Bu projeyi paylaş';
+            $shareTitle = (string) $project['title'];
+            $shareUrl = (string) ($canonicalUrl ?? '');
+            require __DIR__ . '/_share_bar.php';
+            ?>
+        </div>
+    </section>
 </article>

@@ -100,7 +100,7 @@ $flashes = Helpers::getFlashes();
         })();
     </script>
 
-    <link rel="stylesheet" href="/assets/css/style.css?v=1.1">
+    <link rel="stylesheet" href="/assets/css/style.css?v=1.2">
 </head>
 <body>
     <a class="skip-link" href="#main-content">İçeriğe geç</a>
@@ -158,6 +158,19 @@ $flashes = Helpers::getFlashes();
         <?php endif; ?>
 
         <?= $content ?>
+
+        <?php if (empty($hasInlineShare) && empty($hideShareBar)): ?>
+            <section class="global-share-band" aria-label="Sayfayı paylaş">
+                <div class="container">
+                    <?php
+                    $shareHeading = 'Bu sayfayı paylaş';
+                    $shareTitle = (string) ($pageTitle ?? $siteTitle);
+                    $shareUrl = (string) ($canonicalUrl ?? '');
+                    require dirname(__DIR__) . '/site/_share_bar.php';
+                    ?>
+                </div>
+            </section>
+        <?php endif; ?>
     </main>
 
     <footer class="site-footer">
@@ -212,6 +225,6 @@ $flashes = Helpers::getFlashes();
         </div>
     </div>
 
-    <script src="/assets/js/app.js?v=1.1" defer></script>
+    <script src="/assets/js/app.js?v=1.2" defer></script>
 </body>
 </html>
