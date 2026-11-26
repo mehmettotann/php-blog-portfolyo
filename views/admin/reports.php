@@ -22,6 +22,10 @@ $botCatLabels = [
     'other'  => 'Diğer Bot',
 ];
 
+$formatBotName = static function (string $name): string {
+    return in_array($name, ['Other Bot', 'Dier Bot'], true) ? 'Diğer Bot' : $name;
+};
+
 $periodLabels = [
     'day'   => 'Bugün (Günlük)',
     'week'  => 'Son 7 Gün (Haftalık)',
@@ -280,67 +284,158 @@ foreach ($trend as $tr) {
 
     <?php if (empty($bots['list'])): ?>
         <p class="muted-text">Seçili dönemde henüz kayıtlı bot veya yapay zeka ziyareti bulunmuyor. Botlar sitenizi taradıkça burada ayrıştırılmış olarak görünecektir.</p>
-    <?php else: ?>
-        <div class="admin-grid-2">
-            <div>
-                <h3>Gelen Botlar &amp; Yapay Zekalar</h3>
-                <div class="table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Bot / Yapay Zeka</th>
-                                <th>Tür</th>
-                                <th class="text-right">İstek</th>
-                                <th class="text-right">Sayfa</th>
-                                <th class="text-right">Son Geliş</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($bots['list'] as $b): ?>
-                                <tr>
-                                    <td><strong><?= Helpers::e((string) $b['bot_name']) ?></strong></td>
-                                    <td>
-                                        <span class="bot-cat-pill bot-cat-<?= Helpers::e((string) $b['bot_category']) ?>">
-                                            <?= Helpers::e($botCatLabels[$b['bot_category']] ?? (string) $b['bot_category']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-right"><strong><?= number_format((int) $b['total_hits'], 0, ',', '.') ?></strong></td>
-                                    <td class="text-right"><?= (int) $b['unique_paths'] ?></td>
-                                    <td class="text-right row-meta"><?= Helpers::formatDateTimeTr((string) $b['last_seen_at']) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div>
-                <h3>Botların En Çok Taradığı Sayfalar</h3>
-                <div class="table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>URL</th>
-                                <th class="text-right">AI</th>
-                                <th class="text-right">Arama</th>
-                                <th class="text-right">Sosyal</th>
-                                <th class="text-right">Toplam</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($bots['topPaths'] as $bp): ?>
-                                <tr>
-                                    <td><a href="<?= Helpers::e((string) $bp['path']) ?>" target="_blank" class="row-title"><?= Helpers::e((string) $bp['path']) ?></a></td>
-                                    <td class="text-right"><?= (int) $bp['ai_hits'] ?></td>
-                                    <td class="text-right"><?= (int) $bp['search_hits'] ?></td>
-                                    <td class="text-right"><?= (int) $bp['social_hits'] ?></td>
-                                    <td class="text-right"><strong><?= number_format((int) $bp['total_hits'], 0, ',', '.') ?></strong></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     <?php endif; ?>
 </section>
+
+<?php if (!empty($bots['list'])): ?>
+<!-- Kart 1: Gelen Botlar & Yapay Zekalar (Hangi URL'lere Geldikleriyle Birlikte) -->
+<section class="admin-card">
+    <div class="admin-card-head">
+        <div>
+            <h2>Gelen Botlar &amp; Yapay Zekalar</h2>
+            <p class="muted-text small-note">Her botun ve arama motorunun hangi URL'leri kaç kez taradığını doğrudan görebilirsiniz.</p>
+        </div>
+        <span class="row-meta"><?= count($bots['list']) ?> farklı bot</span>
+    </div>
+    <div class="table-wrap">
+        <table class="admin-table bot-detail-table">
+            <thead>
+                <tr>
+                    <th>Bot / Yapay Zeka</th>
+                    <th>Tür</th>
+                    <th>Geldiği URL'ler</th>
+                    <th class="text-right">İstek</th>
+                    <th class="text-right">Sayfa</th>
+                    <th class="text-right">Son Geliş</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($bots['list'] as $b): ?>
+                    <?php
+                    $botPaths = is_array($b['paths'] ?? null) ? $b['paths'] : [];
+                    $visiblePaths = array_slice($botPaths, 0, 4);
+                    $extraPaths = array_slice($botPaths, 4);
+                    ?>
+                    <tr>
+                        <td class="bot-name-cell"><strong><?= Helpers::e($formatBotName((string) $b['bot_name'])) ?></strong></td>
+                        <td>
+                            <span class="bot-cat-pill bot-cat-<?= Helpers::e((string) $b['bot_category']) ?>">
+                                <?= Helpers::e($botCatLabels[$b['bot_category']] ?? (string) $b['bot_category']) ?>
+                            </span>
+                        </td>
+                        <td class="bot-urls-cell">
+                            <?php if (empty($botPaths)): ?>
+                                <span class="row-meta">—</span>
+                            <?php else: ?>
+                                <div class="bot-url-list">
+                                    <?php foreach ($visiblePaths as $bpItem): ?>
+                                        <a href="<?= Helpers::e((string) $bpItem['path']) ?>"
+                                           target="_blank"
+                                           class="bot-url-chip"
+                                           title="Son geliş: <?= Helpers::e(Helpers::formatDateTimeTr((string) ($bpItem['last_seen_at'] ?? ''))) ?>">
+                                            <span class="bot-url-path"><?= Helpers::e((string) $bpItem['path']) ?></span>
+                                            <span class="bot-url-count"><?= (int) $bpItem['hits'] ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php if (!empty($extraPaths)): ?>
+                                    <details class="bot-urls-more">
+                                        <summary>+<?= count($extraPaths) ?> URL daha göster (toplam <?= count($botPaths) ?>)</summary>
+                                        <ul class="bot-urls-detail-list">
+                                            <?php foreach ($extraPaths as $ep): ?>
+                                                <li>
+                                                    <a href="<?= Helpers::e((string) $ep['path']) ?>" target="_blank" class="bot-url-detail-link"><?= Helpers::e((string) $ep['path']) ?></a>
+                                                    <span class="bot-url-detail-meta">
+                                                        <strong><?= (int) $ep['hits'] ?> istek</strong>
+                                                        <?php if (!empty($ep['last_seen_at'])): ?>
+                                                            · <?= Helpers::e(Helpers::formatDateTimeTr((string) $ep['last_seen_at'])) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </details>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-right"><strong><?= number_format((int) $b['total_hits'], 0, ',', '.') ?></strong></td>
+                        <td class="text-right"><?= (int) $b['unique_paths'] ?></td>
+                        <td class="text-right row-meta"><?= Helpers::formatDateTimeTr((string) $b['last_seen_at']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Kart 2: Botların En Çok Taradığı Sayfalar (Alt Alta) -->
+<section class="admin-card">
+    <div class="admin-card-head">
+        <div>
+            <h2>Botların En Çok Taradığı Sayfalar</h2>
+            <p class="muted-text small-note">Her URL'yi hangi arama motoru, yapay zeka veya sosyal medya botunun taradığını gösterir.</p>
+        </div>
+        <span class="row-meta"><?= count($bots['topPaths']) ?> URL</span>
+    </div>
+    <div class="table-wrap">
+        <table class="admin-table bot-detail-table">
+            <thead>
+                <tr>
+                    <th>URL &amp; Gelen Botlar</th>
+                    <th class="text-right">AI</th>
+                    <th class="text-right">Arama</th>
+                    <th class="text-right">Sosyal</th>
+                    <th class="text-right">Diğer</th>
+                    <th class="text-right">Toplam</th>
+                    <th class="text-right">Son Tarama</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($bots['topPaths'] as $bp): ?>
+                    <?php
+                    $pathBots = is_array($bp['bots'] ?? null) ? $bp['bots'] : [];
+                    $visibleBots = array_slice($pathBots, 0, 6);
+                    $extraBots = array_slice($pathBots, 6);
+                    ?>
+                    <tr>
+                        <td>
+                            <a href="<?= Helpers::e((string) $bp['path']) ?>" target="_blank" class="row-title"><?= Helpers::e((string) $bp['path']) ?></a>
+                            <?php if (!empty($pathBots)): ?>
+                                <div class="bot-source-list">
+                                    <?php foreach ($visibleBots as $pb): ?>
+                                        <span class="bot-source-chip bot-cat-<?= Helpers::e((string) $pb['bot_category']) ?>"
+                                              title="Son geliş: <?= Helpers::e(Helpers::formatDateTimeTr((string) ($pb['last_seen_at'] ?? ''))) ?>">
+                                            <?= Helpers::e($formatBotName((string) $pb['bot_name'])) ?>
+                                            <strong><?= (int) $pb['hits'] ?></strong>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php if (!empty($extraBots)): ?>
+                                    <details class="bot-urls-more">
+                                        <summary>+<?= count($extraBots) ?> bot daha</summary>
+                                        <div class="bot-source-list" style="margin-top:0.35rem;">
+                                            <?php foreach ($extraBots as $eb): ?>
+                                                <span class="bot-source-chip bot-cat-<?= Helpers::e((string) $eb['bot_category']) ?>"
+                                                      title="Son geliş: <?= Helpers::e(Helpers::formatDateTimeTr((string) ($eb['last_seen_at'] ?? ''))) ?>">
+                                                    <?= Helpers::e($formatBotName((string) $eb['bot_name'])) ?>
+                                                    <strong><?= (int) $eb['hits'] ?></strong>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </details>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-right"><?= (int) $bp['ai_hits'] ?></td>
+                        <td class="text-right"><?= (int) $bp['search_hits'] ?></td>
+                        <td class="text-right"><?= (int) $bp['social_hits'] ?></td>
+                        <td class="text-right"><?= (int) ($bp['other_hits'] ?? 0) ?></td>
+                        <td class="text-right"><strong><?= number_format((int) $bp['total_hits'], 0, ',', '.') ?></strong></td>
+                        <td class="text-right row-meta"><?= Helpers::formatDateTimeTr((string) ($bp['last_seen_at'] ?? '')) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</section>
+<?php endif; ?>

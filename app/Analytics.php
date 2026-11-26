@@ -89,7 +89,7 @@ final class Analytics
             ['pattern' => '/SemrushBot/i',          'name' => 'SemrushBot',                 'category' => 'other'],
             ['pattern' => '/PetalBot/i',            'name' => 'PetalBot (Huawei)',          'category' => 'other'],
             ['pattern' => '/UptimeRobot|Pingdom|StatusCake/i', 'name' => 'Uptime Monitor',  'category' => 'other'],
-            ['pattern' => '/bot|crawl|spider|slurp|headless|lighthouse/i', 'name' => 'Diğer Bot', 'category' => 'other'],
+            ['pattern' => '/bot|crawl|spider|slurp|headless|lighthouse/i', 'name' => 'Other Bot', 'category' => 'other'],
         ];
 
         foreach ($rules as $rule) {
@@ -507,14 +507,76 @@ final class Analytics
                     COALESCE(SUM(CASE WHEN bot_category = 'ai' THEN hit_count ELSE 0 END), 0) AS ai_hits,
                     COALESCE(SUM(CASE WHEN bot_category = 'search' THEN hit_count ELSE 0 END), 0) AS search_hits,
                     COALESCE(SUM(CASE WHEN bot_category = 'social' THEN hit_count ELSE 0 END), 0) AS social_hits,
+                    COALESCE(SUM(CASE WHEN bot_category = 'other' THEN hit_count ELSE 0 END), 0) AS other_hits,
                     COALESCE(SUM(hit_count), 0) AS total_hits,
                     MAX(last_seen_at) AS last_seen_at
                  FROM bot_visits
                  WHERE {$dateWhere}
                  GROUP BY path
-                 ORDER BY total_hits DESC
-                 LIMIT 30"
+                 ORDER BY total_hits DESC, last_seen_at DESC
+                 LIMIT 50"
             )->fetchAll(PDO::FETCH_ASSOC);
+
+            // Per-bot URL breakdown & per-URL bot breakdown in a single query
+            $detailRows = $pdo->query(
+                "SELECT
+                    bot_name,
+                    bot_category,
+                    path,
+                    COALESCE(SUM(hit_count), 0) AS hits,
+                    MAX(last_seen_at) AS last_seen_at
+                 FROM bot_visits
+                 WHERE {$dateWhere}
+                 GROUP BY bot_name, bot_category, path
+                 ORDER BY hits DESC, last_seen_at DESC
+                 LIMIT 2000"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $botPathsMap = [];
+            $pathBotsMap = [];
+            foreach ($detailRows as $dr) {
+                $bName = (string) $dr['bot_name'];
+                $bCat = (string) $dr['bot_category'];
+                $bPath = (string) $dr['path'];
+                $bHits = (int) $dr['hits'];
+                $bSeen = (string) ($dr['last_seen_at'] ?? '');
+
+                $botKey = $bName . '|' . $bCat;
+                if (!isset($botPathsMap[$botKey])) {
+                    $botPathsMap[$botKey] = [];
+                }
+                if (count($botPathsMap[$botKey]) < 50) {
+                    $botPathsMap[$botKey][] = [
+                        'path' => $bPath,
+                        'hits' => $bHits,
+                        'last_seen_at' => $bSeen,
+                    ];
+                }
+
+                if (!isset($pathBotsMap[$bPath])) {
+                    $pathBotsMap[$bPath] = [];
+                }
+                if (count($pathBotsMap[$bPath]) < 25) {
+                    $pathBotsMap[$bPath][] = [
+                        'bot_name' => $bName,
+                        'bot_category' => $bCat,
+                        'hits' => $bHits,
+                        'last_seen_at' => $bSeen,
+                    ];
+                }
+            }
+
+            foreach ($list as &$botRow) {
+                $botKey = (string) $botRow['bot_name'] . '|' . (string) $botRow['bot_category'];
+                $botRow['paths'] = $botPathsMap[$botKey] ?? [];
+            }
+            unset($botRow);
+
+            foreach ($topPaths as &$pathRow) {
+                $p = (string) $pathRow['path'];
+                $pathRow['bots'] = $pathBotsMap[$p] ?? [];
+            }
+            unset($pathRow);
 
             return [
                 'byCategory' => $byCat,

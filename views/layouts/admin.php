@@ -24,7 +24,7 @@ $flashes = Helpers::getFlashes();
         })();
     </script>
     <link rel="stylesheet" href="/assets/css/style.css?v=1.3">
-    <link rel="stylesheet" href="/assets/css/admin.css?v=1.4">
+    <link rel="stylesheet" href="/assets/css/admin.css?v=1.5">
 </head>
 <body class="admin-body">
     <div class="admin-shell">
