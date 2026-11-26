@@ -68,9 +68,12 @@ ServerSignature Off
 #    Video dosyaları sıkıştırılmamalı; aksi halde HTML5 video sarma (seek) bozulur.
 # -------------------------------------------------------------------------
 <IfModule mod_headers.c>
+    Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; media-src 'self' https:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
 
     <FilesMatch "\.(mp4|webm|ogg|m4v)$">
         Header set Accept-Ranges "bytes"

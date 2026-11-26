@@ -865,10 +865,43 @@ final class SiteController
         echo implode("\n", $lines) . "\n";
     }
 
+    private function isSameOriginRequest(): bool
+    {
+        $expectedHosts = [];
+        $httpHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        if ($httpHost !== '') {
+            $expectedHosts[] = preg_replace('/:\d+$/', '', $httpHost);
+        }
+        $appHost = strtolower((string) parse_url($this->baseUrl(), PHP_URL_HOST));
+        if ($appHost !== '') {
+            $expectedHosts[] = $appHost;
+        }
+        $expectedHosts = array_values(array_unique(array_filter($expectedHosts)));
+
+        $origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+        if ($origin !== '') {
+            $originHost = strtolower((string) parse_url($origin, PHP_URL_HOST));
+            return $originHost !== '' && in_array($originHost, $expectedHosts, true);
+        }
+
+        $referer = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+        if ($referer !== '') {
+            $refHost = strtolower((string) parse_url($referer, PHP_URL_HOST));
+            return $refHost !== '' && in_array($refHost, $expectedHosts, true);
+        }
+
+        return false;
+    }
+
     public function apiTrackVisit(): void
     {
         LiteSpeed::noCache();
         header('Content-Type: application/json; charset=UTF-8');
+
+        if (!$this->isSameOriginRequest()) {
+            http_response_code(403);
+            return;
+        }
 
         $raw = (string) file_get_contents('php://input');
         $data = json_decode($raw, true);
@@ -910,6 +943,12 @@ final class SiteController
     {
         LiteSpeed::noCache();
         header('Content-Type: application/json; charset=UTF-8');
+
+        if (!$this->isSameOriginRequest()) {
+            http_response_code(403);
+            echo json_encode(['ok' => false, 'error' => 'Yetkisiz istek kaynağı.']);
+            return;
+        }
 
         $raw = (string) file_get_contents('php://input');
         $data = json_decode($raw, true);

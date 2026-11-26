@@ -207,8 +207,17 @@ final class Helpers
 
     public static function clientIp(): string
     {
-        $remote = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        return substr((string) $remote, 0, 45);
+        $candidates = [
+            $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+            $_SERVER['HTTP_X_REAL_IP'] ?? null,
+            $_SERVER['REMOTE_ADDR'] ?? null,
+        ];
+        foreach ($candidates as $cand) {
+            if (is_string($cand) && filter_var(trim($cand), FILTER_VALIDATE_IP)) {
+                return substr(trim($cand), 0, 45);
+            }
+        }
+        return '127.0.0.1';
     }
 
     /**

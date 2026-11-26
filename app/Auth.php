@@ -9,6 +9,7 @@ final class Auth
 {
     private const MAX_ATTEMPTS = 6;
     private const WINDOW_MINUTES = 15;
+    private const IDLE_TIMEOUT_SECONDS = 7200; // 2 hours idle timeout
 
     public static function startSession(): void
     {
@@ -40,7 +41,16 @@ final class Auth
             }
             self::startSession();
         }
-        return !empty($_SESSION['admin_user_id']) && is_int($_SESSION['admin_user_id']);
+        if (empty($_SESSION['admin_user_id']) || !is_int($_SESSION['admin_user_id'])) {
+            return false;
+        }
+        $lastActive = (int) ($_SESSION['admin_last_activity'] ?? 0);
+        if ($lastActive > 0 && (time() - $lastActive) > self::IDLE_TIMEOUT_SECONDS) {
+            self::logout();
+            return false;
+        }
+        $_SESSION['admin_last_activity'] = time();
+        return true;
     }
 
     /**
@@ -133,6 +143,7 @@ final class Auth
         $_SESSION['admin_user_id'] = (int) $user['id'];
         $_SESSION['admin_username'] = (string) $user['username'];
         $_SESSION['admin_display_name'] = (string) $user['display_name'];
+        $_SESSION['admin_last_activity'] = time();
         $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
 
         // Signal LiteSpeed Cache to bypass public cache while admin is signed in

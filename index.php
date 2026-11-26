@@ -32,9 +32,11 @@ if (!empty($config['app']['debug'])) {
 
 // Security response headers (also reinforced by .htaccess on LiteSpeed/Apache)
 if (!headers_sent()) {
+    header_remove('X-Powered-By');
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 }
 
 App\LiteSpeed::configure(

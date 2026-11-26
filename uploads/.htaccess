@@ -5,6 +5,11 @@
 
 Options -Indexes -ExecCGI
 
+<IfModule mod_mime.c>
+    RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar
+    RemoveType .php .phtml .phar
+</IfModule>
+
 <FilesMatch "\.(php|php\d|phtml|phar|cgi|pl|py|rb|sh|htaccess|ini|env)$">
     <IfModule mod_authz_core.c>
         Require all denied

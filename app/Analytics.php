@@ -152,7 +152,7 @@ final class Analytics
 
     /**
      * Records a page hit in `page_visit_visitors`.
-     * Same IP on same path on same day increments `hit_count` (single row per day/path/IP).
+     * Strictly validates routes and published DB targets to prevent analytics table pollution.
      */
     public static function recordVisit(string $path, string $pageType, int $targetId = 0, string $title = ''): void
     {
@@ -160,7 +160,6 @@ final class Analytics
             return;
         }
 
-        // Normalize path cleanly
         $cleanPath = '/' . trim((string) parse_url($path, PHP_URL_PATH), '/');
         if ($cleanPath !== '/' && str_ends_with($cleanPath, '/')) {
             $cleanPath = rtrim($cleanPath, '/');
@@ -168,17 +167,56 @@ final class Analytics
         if (str_starts_with($cleanPath, '/admin') || str_starts_with($cleanPath, '/api')) {
             return;
         }
-        $cleanPath = mb_substr($cleanPath, 0, 160);
-
-        $allowedTypes = ['home', 'page', 'post', 'project'];
-        if (!in_array($pageType, $allowedTypes, true)) {
-            $pageType = 'page';
-        }
-
-        $ipHash = self::visitorIpHash();
-        $cleanTitle = mb_substr(trim($title), 0, 200);
 
         $pdo = Database::pdo();
+        $resolvedPath = null;
+        $resolvedType = null;
+        $resolvedTargetId = 0;
+        $resolvedTitle = '';
+
+        // Whitelist genuine static pages
+        $staticRoutes = [
+            '/'         => ['type' => 'home', 'title' => 'Ana Sayfa'],
+            '/hakkimda' => ['type' => 'page', 'title' => 'Hakkımda'],
+            '/yazilar'  => ['type' => 'page', 'title' => 'Yazılar & Notlar'],
+            '/projeler' => ['type' => 'page', 'title' => 'Projeler & Çalışmalar'],
+            '/iletisim' => ['type' => 'page', 'title' => 'İletişim'],
+        ];
+
+        if (isset($staticRoutes[$cleanPath])) {
+            $resolvedPath = $cleanPath;
+            $resolvedType = $staticRoutes[$cleanPath]['type'];
+            $resolvedTitle = $staticRoutes[$cleanPath]['title'];
+        } elseif ($pageType === 'post' && $targetId > 0) {
+            $stmt = $pdo->prepare("SELECT id, slug, title FROM posts WHERE id = :id AND status = 'published' LIMIT 1");
+            $stmt->execute([':id' => $targetId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                return; // Reject fake/unpublished post ID
+            }
+            $resolvedPath = '/yazilar/' . (string) $row['slug'];
+            $resolvedType = 'post';
+            $resolvedTargetId = (int) $row['id'];
+            $resolvedTitle = (string) $row['title'];
+        } elseif ($pageType === 'project' && $targetId > 0) {
+            $stmt = $pdo->prepare("SELECT id, slug, title FROM projects WHERE id = :id AND status = 'published' LIMIT 1");
+            $stmt->execute([':id' => $targetId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                return; // Reject fake/unpublished project ID
+            }
+            $resolvedPath = '/projeler/' . (string) $row['slug'];
+            $resolvedType = 'project';
+            $resolvedTargetId = (int) $row['id'];
+            $resolvedTitle = (string) $row['title'];
+        } else {
+            return; // Ignore unknown/fabricated paths to prevent DB pollution
+        }
+
+        $resolvedPath = mb_substr($resolvedPath, 0, 160);
+        $resolvedTitle = mb_substr(trim($resolvedTitle), 0, 200);
+        $ipHash = self::visitorIpHash();
+
         $stmt = $pdo->prepare(
             'INSERT INTO page_visit_visitors (visit_date, path, page_type, target_id, page_title, ip_hash, hit_count, last_seen_at)
              VALUES (CURDATE(), :path, :type, :tid, :title, :iph, 1, NOW())
@@ -188,10 +226,10 @@ final class Analytics
                 last_seen_at = NOW()'
         );
         $stmt->execute([
-            ':path' => $cleanPath,
-            ':type' => $pageType,
-            ':tid' => max(0, $targetId),
-            ':title' => $cleanTitle,
+            ':path' => $resolvedPath,
+            ':type' => $resolvedType,
+            ':tid' => $resolvedTargetId,
+            ':title' => $resolvedTitle,
             ':iph' => $ipHash,
         ]);
     }
