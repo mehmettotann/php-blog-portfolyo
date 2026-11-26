@@ -23,8 +23,8 @@ $flashes = Helpers::getFlashes();
             document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
         })();
     </script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=1.1">
-    <link rel="stylesheet" href="/assets/css/admin.css?v=1.2">
+    <link rel="stylesheet" href="/assets/css/style.css?v=1.3">
+    <link rel="stylesheet" href="/assets/css/admin.css?v=1.3">
 </head>
 <body class="admin-body">
     <div class="admin-shell">
@@ -39,6 +39,7 @@ $flashes = Helpers::getFlashes();
 
             <nav class="admin-nav" aria-label="Yönetim menüsü">
                 <a href="/admin" class="<?= $activeAdminNav === 'dashboard' ? 'is-active' : '' ?>">Genel Bakış</a>
+                <a href="/admin/raporlar" class="<?= $activeAdminNav === 'reports' ? 'is-active' : '' ?>">Raporlar &amp; İstatistik</a>
                 <a href="/admin/yazilar" class="<?= $activeAdminNav === 'posts' ? 'is-active' : '' ?>">Blog Yazıları</a>
                 <a href="/admin/kategoriler" class="<?= $activeAdminNav === 'categories' ? 'is-active' : '' ?>">Kategoriler</a>
                 <a href="/admin/projeler" class="<?= $activeAdminNav === 'projects' ? 'is-active' : '' ?>">Projeler</a>

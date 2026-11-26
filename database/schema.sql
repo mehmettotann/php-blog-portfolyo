@@ -131,4 +131,29 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
     KEY `idx_login_ip_time` (`ip_address`, `attempted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `page_visit_visitors` (
+    `visit_date` DATE NOT NULL,
+    `path` VARCHAR(160) NOT NULL,
+    `page_type` VARCHAR(20) NOT NULL DEFAULT 'page',
+    `target_id` INT UNSIGNED NOT NULL DEFAULT 0,
+    `page_title` VARCHAR(200) DEFAULT NULL,
+    `ip_hash` CHAR(64) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `hit_count` INT UNSIGNED NOT NULL DEFAULT 1,
+    `last_seen_at` DATETIME DEFAULT NULL,
+    PRIMARY KEY (`visit_date`, `path`, `ip_hash`),
+    KEY `idx_pvv_date` (`visit_date`),
+    KEY `idx_pvv_type_target` (`page_type`, `target_id`, `visit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `content_likes` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `target_type` ENUM('post', 'project') NOT NULL,
+    `target_id` INT UNSIGNED NOT NULL,
+    `ip_hash` CHAR(64) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `created_at` DATETIME DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_like_target_ip` (`target_type`, `target_id`, `ip_hash`),
+    KEY `idx_like_target` (`target_type`, `target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

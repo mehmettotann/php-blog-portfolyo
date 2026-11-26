@@ -78,13 +78,19 @@ $router->get('/rss.xml', static fn() => $site->rss());
 $router->get('/robots.txt', static fn() => $site->robots());
 $router->get('/llms.txt', static fn() => $site->llmsTxt());
 
+// Lightweight Public Analytics & Like API (Cache-exempt)
+$router->post('/api/track', static fn() => $site->apiTrackVisit());
+$router->get('/api/likes', static fn() => $site->apiGetLike());
+$router->post('/api/like', static fn() => $site->apiToggleLike());
+
 // Admin Auth
 $router->get('/admin/giris', static fn() => $admin->loginForm());
 $router->post('/admin/giris', static fn() => $admin->loginSubmit());
 $router->post('/admin/cikis', static fn() => $admin->logout());
 
-// Admin Dashboard
+// Admin Dashboard & Analytics Reports
 $router->get('/admin', static fn() => $admin->dashboard());
+$router->get('/admin/raporlar', static fn() => $admin->reports());
 
 // Admin Posts
 $router->get('/admin/yazilar', static fn() => $admin->postsIndex());

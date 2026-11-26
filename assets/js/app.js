@@ -204,4 +204,78 @@
             });
         }
     });
+
+    // 5. Lightweight Page Visit Beacon (works accurately even with LiteSpeed Cache HIT)
+    const body = document.body;
+    const trackType = body ? body.getAttribute('data-track-type') : null;
+    if (trackType) {
+        const payload = JSON.stringify({
+            path: window.location.pathname || '/',
+            type: trackType,
+            id: parseInt(body.getAttribute('data-track-id') || '0', 10) || 0,
+            title: body.getAttribute('data-track-title') || document.title
+        });
+        if (navigator.sendBeacon) {
+            try {
+                const blob = new Blob([payload], { type: 'application/json' });
+                navigator.sendBeacon('/api/track', blob);
+            } catch (_) {
+                // Fallback ignored
+            }
+        } else {
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+                keepalive: true
+            }).catch(function () {});
+        }
+    }
+
+    // 6. Post & Project Like Button (Cache-safe live count + IP toggle)
+    document.querySelectorAll('[data-like-widget]').forEach(function (widget) {
+        const type = widget.getAttribute('data-like-type') || '';
+        const id = parseInt(widget.getAttribute('data-like-id') || '0', 10) || 0;
+        const btn = widget.querySelector('[data-like-btn]');
+        const label = widget.querySelector('[data-like-label]');
+        const countEl = widget.querySelector('[data-like-count]');
+        if (!type || !id || !btn) return;
+
+        function applyState(liked, count) {
+            btn.classList.toggle('is-liked', !!liked);
+            btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+            if (label) label.textContent = liked ? 'Beğendin' : 'Beğen';
+            if (countEl) countEl.textContent = String(count || 0);
+        }
+
+        // Load fresh live status (never stale from LiteSpeed page cache)
+        fetch('/api/likes?type=' + encodeURIComponent(type) + '&id=' + id, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.ok) {
+                    applyState(data.liked, data.count);
+                }
+            })
+            .catch(function () {});
+
+        let busy = false;
+        btn.addEventListener('click', function () {
+            if (busy) return;
+            busy = true;
+            fetch('/api/like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ type: type, id: id })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.ok) {
+                        applyState(data.liked, data.count);
+                    }
+                })
+                .catch(function () {})
+                .finally(function () { busy = false; });
+        });
+    });
 })();

@@ -53,6 +53,11 @@ use App\MediaRenderer;
 
         <div class="inline-share-wrap">
             <?php
+            if ($post['status'] === 'published') {
+                $likeType = 'post';
+                $likeId = (int) $post['id'];
+                require __DIR__ . '/_like_button.php';
+            }
             $shareHeading = 'Bu yazıyı paylaş';
             $shareTitle = (string) $post['title'];
             $shareUrl = (string) ($canonicalUrl ?? '');

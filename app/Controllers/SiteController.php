@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Analytics;
 use App\Auth;
 use App\Database;
 use App\Helpers;
@@ -65,6 +66,7 @@ final class SiteController
             'pageTitle' => $siteTitle . ' — ' . $tagline,
             'metaDescription' => $settings['site_description'] ?? $tagline,
             'activeNav' => 'home',
+            'trackMeta' => ['type' => 'home', 'id' => 0, 'title' => 'Ana Sayfa'],
             'canonicalUrl' => $base . '/',
             'ogMeta' => Seo::resolveOgImage(null, $settings, $base, $siteTitle . ' — ' . $tagline),
             'jsonLd' => [
@@ -93,6 +95,7 @@ final class SiteController
             'pageTitle' => 'Hakkımda — ' . $siteTitle,
             'metaDescription' => $settings['about_intro'] ?? ($settings['site_description'] ?? ''),
             'activeNav' => 'about',
+            'trackMeta' => ['type' => 'page', 'id' => 0, 'title' => 'Hakkımda'],
             'canonicalUrl' => $canonical,
             'ogMeta' => Seo::resolveOgImage(null, $settings, $base, 'Hakkımda — ' . $siteTitle),
             'jsonLd' => [
@@ -216,6 +219,7 @@ final class SiteController
             'metaDescription' => $metaDesc,
             'metaRobots' => $metaRobots,
             'activeNav' => 'blog',
+            'trackMeta' => ['type' => 'page', 'id' => 0, 'title' => $headingTitle],
             'canonicalUrl' => $canonical,
             'ogMeta' => Seo::resolveOgImage(null, $settings, $base, $headingTitle . ' — ' . $siteTitle),
             'jsonLd' => [Seo::breadcrumbSchema($crumbs)],
@@ -316,6 +320,9 @@ final class SiteController
             ],
             'activeNav' => 'blog',
             'hasInlineShare' => true,
+            'trackMeta' => $post['status'] === 'published'
+                ? ['type' => 'post', 'id' => (int) $post['id'], 'title' => (string) $post['title']]
+                : null,
             'canonicalUrl' => $canonical,
             'settings' => $settings,
             'post' => $post,
@@ -393,6 +400,7 @@ final class SiteController
             'pageTitle' => ($tag !== '' ? "Projeler ({$tag})" : 'Projeler & Çalışmalar') . ' — ' . $siteTitle,
             'metaDescription' => 'Üretilen web uygulamaları, teknik çalışmalar, deneysel projeler ve demo videolar — ' . $siteTitle,
             'activeNav' => 'projects',
+            'trackMeta' => ['type' => 'page', 'id' => 0, 'title' => 'Projeler & Çalışmalar'],
             'canonicalUrl' => $canonical,
             'ogMeta' => Seo::resolveOgImage(null, $settings, $base, 'Projeler & Çalışmalar — ' . $siteTitle),
             'jsonLd' => [
@@ -483,6 +491,9 @@ final class SiteController
             ],
             'activeNav' => 'projects',
             'hasInlineShare' => true,
+            'trackMeta' => $project['status'] === 'published'
+                ? ['type' => 'project', 'id' => (int) $project['id'], 'title' => (string) $project['title']]
+                : null,
             'canonicalUrl' => $canonical,
             'settings' => $settings,
             'project' => $project,
@@ -515,6 +526,7 @@ final class SiteController
             'pageTitle' => 'İletişim — ' . $siteTitle,
             'metaDescription' => 'Adınız Soyadınız ile iletişime geçin, sosyal medya hesapları ve mesaj formu.',
             'activeNav' => 'contact',
+            'trackMeta' => ['type' => 'page', 'id' => 0, 'title' => 'İletişim'],
             'canonicalUrl' => $canonical,
             'ogMeta' => Seo::resolveOgImage(null, $settings, $base, 'İletişim — ' . $siteTitle),
             'jsonLd' => [
@@ -851,6 +863,76 @@ final class SiteController
         $lines[] = "- [RSS Beslemesi]({$base}/rss.xml)";
 
         echo implode("\n", $lines) . "\n";
+    }
+
+    public function apiTrackVisit(): void
+    {
+        LiteSpeed::noCache();
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $raw = (string) file_get_contents('php://input');
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            $data = $_POST;
+        }
+
+        $path = trim((string) ($data['path'] ?? '/'));
+        $type = trim((string) ($data['type'] ?? 'page'));
+        $id = (int) ($data['id'] ?? 0);
+        $title = trim((string) ($data['title'] ?? ''));
+
+        try {
+            Analytics::recordVisit($path, $type, $id, $title);
+        } catch (\Throwable) {
+            // Silently ignore if analytics table is not yet migrated
+        }
+
+        http_response_code(204);
+    }
+
+    public function apiGetLike(): void
+    {
+        LiteSpeed::noCache();
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $type = trim((string) ($_GET['type'] ?? ''));
+        $id = (int) ($_GET['id'] ?? 0);
+
+        try {
+            $res = Analytics::getLikeStatus($type, $id);
+            echo json_encode(['ok' => true, 'count' => $res['count'], 'liked' => $res['liked']]);
+        } catch (\Throwable) {
+            echo json_encode(['ok' => true, 'count' => 0, 'liked' => false]);
+        }
+    }
+
+    public function apiToggleLike(): void
+    {
+        LiteSpeed::noCache();
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $raw = (string) file_get_contents('php://input');
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            $data = $_POST;
+        }
+
+        $type = trim((string) ($data['type'] ?? ''));
+        $id = (int) ($data['id'] ?? 0);
+
+        if (!in_array($type, ['post', 'project'], true) || $id <= 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Geçersiz istek.']);
+            return;
+        }
+
+        try {
+            $res = Analytics::toggleLike($type, $id);
+            echo json_encode(['ok' => true, 'count' => $res['count'], 'liked' => $res['liked']]);
+        } catch (\Throwable) {
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'Beğeni kaydedilemedi.']);
+        }
     }
 
     public function notFound(): void

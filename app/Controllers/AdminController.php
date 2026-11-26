@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Analytics;
 use App\Auth;
 use App\Database;
 use App\Helpers;
@@ -117,6 +118,43 @@ final class AdminController
             'recentPosts' => $recentPosts,
             'recentMessages' => $recentMessages,
             'serverInfo' => $serverInfo,
+        ]);
+    }
+
+    public function reports(): void
+    {
+        Auth::requireAdmin();
+        $period = trim((string) ($_GET['donem'] ?? 'month'));
+        $typeFilter = trim((string) ($_GET['tur'] ?? 'all'));
+
+        $report = [
+            'period' => $period,
+            'typeFilter' => $typeFilter,
+            'summary' => ['unique_visitors' => 0, 'total_hits' => 0, 'total_likes' => 0],
+            'periodsOverview' => [
+                'day' => ['unique' => 0, 'hits' => 0],
+                'week' => ['unique' => 0, 'hits' => 0],
+                'month' => ['unique' => 0, 'hits' => 0],
+                'year' => ['unique' => 0, 'hits' => 0],
+            ],
+            'pages' => [],
+            'trend' => [],
+            'topLikedPosts' => [],
+            'topLikedProjects' => [],
+        ];
+        $tablesMissing = false;
+
+        try {
+            $report = Analytics::buildReport($period, $typeFilter);
+        } catch (Throwable) {
+            $tablesMissing = true;
+        }
+
+        $this->renderAdmin('admin/reports', [
+            'pageTitle' => 'Ziyaretçi & Beğeni Raporları',
+            'activeAdminNav' => 'reports',
+            'report' => $report,
+            'tablesMissing' => $tablesMissing,
         ]);
     }
 

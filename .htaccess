@@ -49,8 +49,8 @@ ServerSignature Off
 <IfModule LiteSpeed>
     CacheLookup on
 
-    # Yönetim panelini ve giriş yapmış admin oturumlarını önbellekleme
-    RewriteCond %{REQUEST_URI} ^/admin [NC,OR]
+    # Yönetim panelini, API uçlarını ve giriş yapmış admin oturumlarını önbellekleme
+    RewriteCond %{REQUEST_URI} ^/(admin|api) [NC,OR]
     RewriteCond %{HTTP_COOKIE} bp_admin_logged_in=1 [NC]
     RewriteRule .* - [E=Cache-Control:no-cache]
 

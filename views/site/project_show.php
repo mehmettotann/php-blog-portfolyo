@@ -149,12 +149,19 @@ use App\MediaRenderer;
 
     <section class="section project-share-section">
         <div class="container">
-            <?php
-            $shareHeading = 'Bu projeyi paylaş';
-            $shareTitle = (string) $project['title'];
-            $shareUrl = (string) ($canonicalUrl ?? '');
-            require __DIR__ . '/_share_bar.php';
-            ?>
+            <div class="inline-share-stack">
+                <?php
+                if ($project['status'] === 'published') {
+                    $likeType = 'project';
+                    $likeId = (int) $project['id'];
+                    require __DIR__ . '/_like_button.php';
+                }
+                $shareHeading = 'Bu projeyi paylaş';
+                $shareTitle = (string) $project['title'];
+                $shareUrl = (string) ($canonicalUrl ?? '');
+                require __DIR__ . '/_share_bar.php';
+                ?>
+            </div>
         </div>
     </section>
 </article>

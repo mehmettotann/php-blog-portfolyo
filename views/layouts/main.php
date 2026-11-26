@@ -100,9 +100,17 @@ $flashes = Helpers::getFlashes();
         })();
     </script>
 
-    <link rel="stylesheet" href="/assets/css/style.css?v=1.2">
+    <link rel="stylesheet" href="/assets/css/style.css?v=1.3">
 </head>
-<body>
+<?php
+$trackAttrs = '';
+if (!empty($trackMeta) && is_array($trackMeta)) {
+    $trackAttrs = ' data-track-type="' . Helpers::e((string) ($trackMeta['type'] ?? 'page')) . '"'
+        . ' data-track-id="' . (int) ($trackMeta['id'] ?? 0) . '"'
+        . ' data-track-title="' . Helpers::e((string) ($trackMeta['title'] ?? ($pageTitle ?? ''))) . '"';
+}
+?>
+<body<?= $trackAttrs ?>>
     <a class="skip-link" href="#main-content">İçeriğe geç</a>
 
     <header class="site-header">
@@ -225,6 +233,6 @@ $flashes = Helpers::getFlashes();
         </div>
     </div>
 
-    <script src="/assets/js/app.js?v=1.2" defer></script>
+    <script src="/assets/js/app.js?v=1.3" defer></script>
 </body>
 </html>
