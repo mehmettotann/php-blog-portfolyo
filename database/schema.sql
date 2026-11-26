@@ -156,4 +156,16 @@ CREATE TABLE IF NOT EXISTS `content_likes` (
     KEY `idx_like_target` (`target_type`, `target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `bot_visits` (
+    `visit_date` DATE NOT NULL,
+    `bot_name` VARCHAR(50) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
+    `bot_category` ENUM('ai', 'search', 'social', 'other') NOT NULL DEFAULT 'other',
+    `path` VARCHAR(160) NOT NULL,
+    `hit_count` INT UNSIGNED NOT NULL DEFAULT 1,
+    `last_seen_at` DATETIME DEFAULT NULL,
+    PRIMARY KEY (`visit_date`, `bot_name`, `path`),
+    KEY `idx_bv_date_cat` (`visit_date`, `bot_category`),
+    KEY `idx_bv_cat` (`bot_category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

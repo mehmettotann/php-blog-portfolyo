@@ -19,7 +19,7 @@ Paylaşımlı hosting (cPanel / Plesk + LiteSpeed, 1 GB RAM / 1 Core CPU) ve lok
   - **Zengin Metin & Medya Editörü (WYSIWYG):** Paragraf, H2/H3 başlık, kalın/italik/altı çizili, liste, alıntı, kod bloğu, link, HTML kaynak görünümü; editör içinden imlecin olduğu yere doğrudan görsel yükleme (Ctrl+V yapıştırma & sürükle-bırak destekli), kütüphaneden seçme, yerel MP4/WebM video yükleme ve YouTube/Vimeo gömme.
   - Sunucu tarafı `DOMDocument` tabanlı sıkı HTML temizleme (XSS koruması).
   - Proje çoklu görsel & çoklu video yöneticisi (sıralama + ilerleme çubuklu AJAX yükleyici).
-  - **Ziyaretçi & Beğeni Raporları (`/admin/raporlar`):** Günlük, haftalık, aylık, yıllık ve tüm zamanlar bazında tekil ziyaretçi (aynı IP tek sayılır), toplam tıklama (aynı IP dahil) ve yazı/proje beğeni istatistikleri + günlük trend grafiği (LiteSpeed Cache ve Cloudflare `CF-Connecting-IP` uyumlu).
+  - **Ziyaretçi, Bot/Yapay Zeka & Beğeni Raporları (`/admin/raporlar`):** Günlük, haftalık, aylık, yıllık ve tüm zamanlar bazında tekil ziyaretçi (aynı IP tek sayılır), toplam tıklama (aynı IP dahil), yazı/proje beğeni istatistikleri, günlük trend grafiği ve **Yapay Zeka (ClaudeBot, GPTBot, Perplexity, Gemini), Arama Motoru (Googlebot, Bingbot), Sosyal Medya (WhatsApp, Telegram, Facebook, X)** botlarının ayrıştırılmış raporları (LiteSpeed Cache ve Cloudflare `CF-Connecting-IP` uyumlu).
   - Medya kütüphanesi, kategori yönetimi, site/hakkımda ayarları, varsayılan sosyal paylaşım görseli ve gelen mesaj yönetimi.
 - **SEO, Yapay Zeka & Sosyal Medya Paylaşımı:**
   - Temiz Türkçe URL'ler (`/yazilar/{slug}`, `/projeler/{slug}`), dinamik canonical URL'ler, `/sitemap.xml`, `/rss.xml`, `/robots.txt` ve yapay zeka asistanları için dinamik **`/llms.txt`** (`llmstxt.org`).

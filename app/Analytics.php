@@ -33,15 +33,121 @@ final class Analytics
         return '127.0.0.1';
     }
 
+    /**
+     * Detects known AI crawlers, search engine bots, social preview bots, and other crawlers.
+     *
+     * @return array{name:string,category:'ai'|'search'|'social'|'other'}|null
+     */
+    public static function detectBot(?string $ua): ?array
+    {
+        if ($ua === null || trim($ua) === '') {
+            return null;
+        }
+
+        // Order matters: check more specific AI / assistant agents before generic ones (e.g. Applebot-Extended before Applebot)
+        $rules = [
+            // AI Crawlers & Assistants
+            ['pattern' => '/OAI-SearchBot/i',       'name' => 'OAI-SearchBot (OpenAI)',     'category' => 'ai'],
+            ['pattern' => '/ChatGPT-User/i',        'name' => 'ChatGPT-User (OpenAI)',      'category' => 'ai'],
+            ['pattern' => '/GPTBot/i',              'name' => 'GPTBot (OpenAI)',            'category' => 'ai'],
+            ['pattern' => '/Claude-SearchBot/i',    'name' => 'Claude-SearchBot',           'category' => 'ai'],
+            ['pattern' => '/Claude-User/i',         'name' => 'Claude-User (Anthropic)',    'category' => 'ai'],
+            ['pattern' => '/ClaudeBot|anthropic/i', 'name' => 'ClaudeBot (Anthropic)',      'category' => 'ai'],
+            ['pattern' => '/Perplexity-User/i',     'name' => 'Perplexity-User',            'category' => 'ai'],
+            ['pattern' => '/PerplexityBot/i',       'name' => 'PerplexityBot',              'category' => 'ai'],
+            ['pattern' => '/Google-CloudVertexBot/i','name' => 'Google-CloudVertexBot',     'category' => 'ai'],
+            ['pattern' => '/Google-Extended/i',     'name' => 'Google-Extended (Gemini)',   'category' => 'ai'],
+            ['pattern' => '/Applebot-Extended/i',   'name' => 'Applebot-Extended (AI)',     'category' => 'ai'],
+            ['pattern' => '/Meta-ExternalAgent/i',  'name' => 'Meta-ExternalAgent (AI)',    'category' => 'ai'],
+            ['pattern' => '/Meta-ExternalFetcher/i','name' => 'Meta-ExternalFetcher (AI)',  'category' => 'ai'],
+            ['pattern' => '/MistralAI/i',           'name' => 'MistralAI-User',             'category' => 'ai'],
+            ['pattern' => '/DuckAssistBot/i',       'name' => 'DuckAssistBot (AI)',         'category' => 'ai'],
+            ['pattern' => '/Bytespider|TikTokSpider/i','name' => 'Bytespider (ByteDance)',  'category' => 'ai'],
+            ['pattern' => '/CCBot/i',               'name' => 'CCBot (Common Crawl)',       'category' => 'ai'],
+            ['pattern' => '/Amazonbot/i',           'name' => 'Amazonbot (AI)',             'category' => 'ai'],
+            ['pattern' => '/Manus/i',               'name' => 'Manus Bot (AI)',             'category' => 'ai'],
+
+            // Search Engine Crawlers
+            ['pattern' => '/Googlebot|GoogleOther|AdsBot-Google/i', 'name' => 'Googlebot',  'category' => 'search'],
+            ['pattern' => '/bingbot|msnbot/i',      'name' => 'Bingbot (Microsoft)',        'category' => 'search'],
+            ['pattern' => '/Yandex/i',              'name' => 'YandexBot',                  'category' => 'search'],
+            ['pattern' => '/DuckDuckBot/i',         'name' => 'DuckDuckBot',                'category' => 'search'],
+            ['pattern' => '/Applebot/i',            'name' => 'Applebot',                   'category' => 'search'],
+            ['pattern' => '/Baiduspider/i',         'name' => 'Baiduspider',                'category' => 'search'],
+
+            // Social & Link Preview Bots
+            ['pattern' => '/WhatsApp/i',            'name' => 'WhatsApp Preview',           'category' => 'social'],
+            ['pattern' => '/TelegramBot/i',         'name' => 'TelegramBot',                'category' => 'social'],
+            ['pattern' => '/facebookexternalhit|Facebot/i', 'name' => 'Facebook / Meta',    'category' => 'social'],
+            ['pattern' => '/Twitterbot/i',          'name' => 'X (Twitterbot)',             'category' => 'social'],
+            ['pattern' => '/LinkedInBot/i',         'name' => 'LinkedInBot',                'category' => 'social'],
+            ['pattern' => '/Discordbot|Slackbot/i', 'name' => 'Discord / Slack',            'category' => 'social'],
+
+            // Archivers, SEO & Generic Bots
+            ['pattern' => '/archive\.org_bot|ia_archiver/i', 'name' => 'Internet Archive',  'category' => 'other'],
+            ['pattern' => '/AhrefsBot/i',           'name' => 'AhrefsBot',                  'category' => 'other'],
+            ['pattern' => '/SemrushBot/i',          'name' => 'SemrushBot',                 'category' => 'other'],
+            ['pattern' => '/PetalBot/i',            'name' => 'PetalBot (Huawei)',          'category' => 'other'],
+            ['pattern' => '/UptimeRobot|Pingdom|StatusCake/i', 'name' => 'Uptime Monitor',  'category' => 'other'],
+            ['pattern' => '/bot|crawl|spider|slurp|headless|lighthouse/i', 'name' => 'Diğer Bot', 'category' => 'other'],
+        ];
+
+        foreach ($rules as $rule) {
+            if (preg_match($rule['pattern'], $ua)) {
+                return ['name' => $rule['name'], 'category' => $rule['category']];
+            }
+        }
+
+        return null;
+    }
+
     public static function isBotUserAgent(?string $ua): bool
     {
         if ($ua === null || trim($ua) === '') {
             return true;
         }
-        return (bool) preg_match(
-            '/bot|crawl|spider|slurp|mediapartners|facebookexternalhit|whatsapp|telegrambot|twitterbot|linkedinbot|preview|curl|wget|python-requests|go-http-client|headless|lighthouse|uptime|pingdom|ahrefs|semrush|mj12bot|dotbot|bytespider|gptbot|claudebot|perplexity|anthropic|openai/i',
-            $ua
+        if (self::detectBot($ua) !== null) {
+            return true;
+        }
+        return (bool) preg_match('/curl|wget|python-requests|go-http-client|preview/i', $ua);
+    }
+
+    /**
+     * Records a server-side bot or AI crawler visit into `bot_visits`.
+     */
+    public static function recordBotVisit(string $uriPath): void
+    {
+        $detected = self::detectBot($_SERVER['HTTP_USER_AGENT'] ?? null);
+        if ($detected === null) {
+            return;
+        }
+
+        $cleanPath = '/' . trim((string) parse_url($uriPath, PHP_URL_PATH), '/');
+        if ($cleanPath !== '/' && str_ends_with($cleanPath, '/')) {
+            $cleanPath = rtrim($cleanPath, '/');
+        }
+        if (str_starts_with($cleanPath, '/admin') || str_starts_with($cleanPath, '/api')) {
+            return;
+        }
+        $cleanPath = mb_substr($cleanPath, 0, 160);
+
+        $botName = substr($detected['name'], 0, 50);
+        // Ensure ASCII-safe name for ASCII column
+        $botName = preg_replace('/[^\x20-\x7E]/', '', $botName) ?: 'Other Bot';
+
+        $pdo = Database::pdo();
+        $stmt = $pdo->prepare(
+            'INSERT INTO bot_visits (visit_date, bot_name, bot_category, path, hit_count, last_seen_at)
+             VALUES (CURDATE(), :name, :cat, :path, 1, NOW())
+             ON DUPLICATE KEY UPDATE
+                hit_count = hit_count + 1,
+                last_seen_at = NOW()'
         );
+        $stmt->execute([
+            ':name' => $botName,
+            ':cat' => $detected['category'],
+            ':path' => $cleanPath,
+        ]);
     }
 
     /**
@@ -295,6 +401,9 @@ final class Analytics
 
         $totalLikes = (int) $pdo->query('SELECT COUNT(*) FROM content_likes')->fetchColumn();
 
+        // 6. Bot & AI Crawler summary for the same selected period
+        $bots = self::buildBotReport($dateWhere);
+
         return [
             'period' => $period,
             'typeFilter' => $typeFilter,
@@ -308,6 +417,75 @@ final class Analytics
             'trend' => $trendRows,
             'topLikedPosts' => $topLikedPosts,
             'topLikedProjects' => $topLikedProjects,
+            'bots' => $bots,
         ];
+    }
+
+    /**
+     * Builds categorized AI / Search / Social / Other bot report for the given SQL date filter.
+     *
+     * @return array<string, mixed>
+     */
+    private static function buildBotReport(string $dateWhere): array
+    {
+        $empty = [
+            'byCategory' => ['ai' => 0, 'search' => 0, 'social' => 0, 'other' => 0],
+            'totalHits' => 0,
+            'list' => [],
+            'topPaths' => [],
+        ];
+
+        try {
+            $pdo = Database::pdo();
+
+            $byCat = ['ai' => 0, 'search' => 0, 'social' => 0, 'other' => 0];
+            $totalHits = 0;
+            foreach ($pdo->query("SELECT bot_category, COALESCE(SUM(hit_count), 0) AS hits FROM bot_visits WHERE {$dateWhere} GROUP BY bot_category") as $r) {
+                $cat = (string) $r['bot_category'];
+                $h = (int) $r['hits'];
+                if (isset($byCat[$cat])) {
+                    $byCat[$cat] = $h;
+                }
+                $totalHits += $h;
+            }
+
+            $list = $pdo->query(
+                "SELECT
+                    bot_name,
+                    bot_category,
+                    COALESCE(SUM(hit_count), 0) AS total_hits,
+                    COUNT(DISTINCT path) AS unique_paths,
+                    MAX(last_seen_at) AS last_seen_at
+                 FROM bot_visits
+                 WHERE {$dateWhere}
+                 GROUP BY bot_name, bot_category
+                 ORDER BY total_hits DESC, last_seen_at DESC
+                 LIMIT 50"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            $topPaths = $pdo->query(
+                "SELECT
+                    path,
+                    COALESCE(SUM(CASE WHEN bot_category = 'ai' THEN hit_count ELSE 0 END), 0) AS ai_hits,
+                    COALESCE(SUM(CASE WHEN bot_category = 'search' THEN hit_count ELSE 0 END), 0) AS search_hits,
+                    COALESCE(SUM(CASE WHEN bot_category = 'social' THEN hit_count ELSE 0 END), 0) AS social_hits,
+                    COALESCE(SUM(hit_count), 0) AS total_hits,
+                    MAX(last_seen_at) AS last_seen_at
+                 FROM bot_visits
+                 WHERE {$dateWhere}
+                 GROUP BY path
+                 ORDER BY total_hits DESC
+                 LIMIT 30"
+            )->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'byCategory' => $byCat,
+                'totalHits' => $totalHits,
+                'list' => $list,
+                'topPaths' => $topPaths,
+            ];
+        } catch (\Throwable) {
+            return $empty;
+        }
     }
 }

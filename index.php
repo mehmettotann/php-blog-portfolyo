@@ -60,6 +60,15 @@ try {
     exit;
 }
 
+// Log AI crawlers, search engines, and social preview bots server-side (zero impact on humans)
+if (in_array(strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')), ['GET', 'HEAD'], true)) {
+    try {
+        App\Analytics::recordBotVisit((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+    } catch (Throwable) {
+        // Non-fatal
+    }
+}
+
 $router = new App\Router();
 $site = new App\Controllers\SiteController($config);
 $admin = new App\Controllers\AdminController($config);

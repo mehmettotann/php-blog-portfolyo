@@ -9,6 +9,18 @@ $pages = $report['pages'] ?? [];
 $trend = $report['trend'] ?? [];
 $topPosts = $report['topLikedPosts'] ?? [];
 $topProjects = $report['topLikedProjects'] ?? [];
+$bots = $report['bots'] ?? [
+    'byCategory' => ['ai' => 0, 'search' => 0, 'social' => 0, 'other' => 0],
+    'totalHits' => 0,
+    'list' => [],
+    'topPaths' => [],
+];
+$botCatLabels = [
+    'ai'     => 'Yapay Zeka',
+    'search' => 'Arama Motoru',
+    'social' => 'Sosyal Medya',
+    'other'  => 'Diğer Bot',
+];
 
 $periodLabels = [
     'day'   => 'Bugün (Günlük)',
@@ -232,3 +244,103 @@ foreach ($trend as $tr) {
         <?php endif; ?>
     </section>
 </div>
+
+<!-- Robot & Yapay Zeka Tarayıcıları Raporu -->
+<section class="admin-card">
+    <div class="admin-card-head">
+        <div>
+            <h2>Robot &amp; Yapay Zeka Tarayıcıları (<?= Helpers::e($periodLabels[$period] ?? '') ?>)</h2>
+            <p class="muted-text small-note">İnsan ziyaretçilerden tamamen ayrı olarak sayılır: ChatGPT/GPTBot, ClaudeBot, Perplexity, Googlebot, Bing, WhatsApp önizleme botları vb.</p>
+        </div>
+        <span class="row-meta">Toplam <?= number_format((int) ($bots['totalHits'] ?? 0), 0, ',', '.') ?> bot isteği</span>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:1.25rem;">
+        <div class="stat-card">
+            <span class="stat-label">Yapay Zeka Botları (AI)</span>
+            <strong class="stat-value"><?= number_format((int) ($bots['byCategory']['ai'] ?? 0), 0, ',', '.') ?></strong>
+            <span class="stat-sub">GPTBot, ClaudeBot, Perplexity, Gemini...</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Arama Motorları</span>
+            <strong class="stat-value"><?= number_format((int) ($bots['byCategory']['search'] ?? 0), 0, ',', '.') ?></strong>
+            <span class="stat-sub">Googlebot, Bingbot, Yandex, Applebot...</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Sosyal Medya / Paylaşım</span>
+            <strong class="stat-value"><?= number_format((int) ($bots['byCategory']['social'] ?? 0), 0, ',', '.') ?></strong>
+            <span class="stat-sub">WhatsApp, Telegram, Facebook, X, LinkedIn</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Diğer Botlar</span>
+            <strong class="stat-value"><?= number_format((int) ($bots['byCategory']['other'] ?? 0), 0, ',', '.') ?></strong>
+            <span class="stat-sub">Internet Archive, SEO &amp; izleme botları</span>
+        </div>
+    </div>
+
+    <?php if (empty($bots['list'])): ?>
+        <p class="muted-text">Seçili dönemde henüz kayıtlı bot veya yapay zeka ziyareti bulunmuyor. Botlar sitenizi taradıkça burada ayrıştırılmış olarak görünecektir.</p>
+    <?php else: ?>
+        <div class="admin-grid-2">
+            <div>
+                <h3>Gelen Botlar &amp; Yapay Zekalar</h3>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Bot / Yapay Zeka</th>
+                                <th>Tür</th>
+                                <th class="text-right">İstek</th>
+                                <th class="text-right">Sayfa</th>
+                                <th class="text-right">Son Geliş</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($bots['list'] as $b): ?>
+                                <tr>
+                                    <td><strong><?= Helpers::e((string) $b['bot_name']) ?></strong></td>
+                                    <td>
+                                        <span class="bot-cat-pill bot-cat-<?= Helpers::e((string) $b['bot_category']) ?>">
+                                            <?= Helpers::e($botCatLabels[$b['bot_category']] ?? (string) $b['bot_category']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-right"><strong><?= number_format((int) $b['total_hits'], 0, ',', '.') ?></strong></td>
+                                    <td class="text-right"><?= (int) $b['unique_paths'] ?></td>
+                                    <td class="text-right row-meta"><?= Helpers::formatDateTimeTr((string) $b['last_seen_at']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <h3>Botların En Çok Taradığı Sayfalar</h3>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th class="text-right">AI</th>
+                                <th class="text-right">Arama</th>
+                                <th class="text-right">Sosyal</th>
+                                <th class="text-right">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($bots['topPaths'] as $bp): ?>
+                                <tr>
+                                    <td><a href="<?= Helpers::e((string) $bp['path']) ?>" target="_blank" class="row-title"><?= Helpers::e((string) $bp['path']) ?></a></td>
+                                    <td class="text-right"><?= (int) $bp['ai_hits'] ?></td>
+                                    <td class="text-right"><?= (int) $bp['search_hits'] ?></td>
+                                    <td class="text-right"><?= (int) $bp['social_hits'] ?></td>
+                                    <td class="text-right"><strong><?= number_format((int) $bp['total_hits'], 0, ',', '.') ?></strong></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+</section>

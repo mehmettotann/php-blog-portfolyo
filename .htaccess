@@ -54,6 +54,10 @@ ServerSignature Off
     RewriteCond %{HTTP_COOKIE} bp_admin_logged_in=1 [NC]
     RewriteRule .* - [E=Cache-Control:no-cache]
 
+    # Yapay zeka ve arama motoru botlarını PHP'den geçirerek tam raporla (insan ziyaretçiler LiteSpeed Cache hızında kalır)
+    RewriteCond %{HTTP_USER_AGENT} (bot|crawl|spider|slurp|gptbot|claudebot|perplexity|chatgpt|anthropic|openai|whatsapp|telegram|facebookexternalhit|twitterbot|linkedinbot|applebot|yandex|bingbot|googlebot|archive\.org) [NC]
+    RewriteRule .* - [E=Cache-Control:no-cache]
+
     # Video dosyalarını LiteSpeed sayfa önbelleği yerine doğrudan sunucudan byte-range ile akıt
     RewriteCond %{REQUEST_URI} \.(mp4|webm|ogg|m4v)$ [NC]
     RewriteRule .* - [E=Cache-Control:no-cache,E=no-gzip:1,E=dont-vary:1]

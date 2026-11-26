@@ -1102,6 +1102,24 @@
     color: #e11d48;
 }
 
+.bot-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.16rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bot-cat-ai     { background: rgba(124, 58, 237, 0.14); color: #7c3aed; }
+.bot-cat-search { background: var(--accent-soft); color: var(--accent); }
+.bot-cat-social { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.bot-cat-other  { background: var(--bg-alt); color: var(--text-muted); border: 1px solid var(--border); }
+
+[data-theme="dark"] .bot-cat-ai     { color: #c4b5fd; }
+[data-theme="dark"] .bot-cat-social { color: #34d399; }
+
 @media (max-width: 760px) {
     .report-selection-summary {
         grid-template-columns: 1fr;
