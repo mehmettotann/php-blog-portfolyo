@@ -24,6 +24,7 @@ Paylaşımlı hosting (cPanel / Plesk + LiteSpeed, 1 GB RAM / 1 Core CPU) ve lok
   - Temiz Türkçe URL'ler (`/yazilar/{slug}`, `/projeler/{slug}`), dinamik canonical URL'ler, `/sitemap.xml`, `/rss.xml`, `/robots.txt` ve yapay zeka asistanları için dinamik **`/llms.txt`** (`llmstxt.org`).
   - Schema.org JSON-LD (`WebSite`, `Person`, `BlogPosting`, `CreativeWork`, `BreadcrumbList`).
   - WhatsApp, Telegram, X ve LinkedIn için otomatik kapak görselli Open Graph & Twitter Card önizlemeleri.
+  - Tüm sayfa, yazı ve projelerde tek tıkla **WhatsApp, Facebook, X, LinkedIn, Telegram, Instagram (Web Share API)** ve bağlantı kopyalama butonları.
 - **Güvenlik & Performans:**
   - PDO Prepared Statements, XSS koruması, CSRF doğrulama, giriş brute-force koruması, `finfo` magic-byte dosya doğrulaması, `/uploads/` içinde PHP çalıştırma engeli.
   - Açık/koyu tema (`light/dark mode`), mobil uyumlu tasarım, LiteSpeed Cache başlıkları ve otomatik önbellek temizleme (`X-LiteSpeed-Purge`).
